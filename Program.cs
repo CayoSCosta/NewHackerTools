@@ -27,6 +27,58 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Bloco Seed Automático Completo (Cria a Role, o Usuário Admin e Associa)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+        // 1. Garante que a Role "Admin" existe
+        string roleName = "Admin";
+        if (!roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
+        {
+            roleManager.CreateAsync(new IdentityRole(roleName)).GetAwaiter().GetResult();
+        }
+
+        // 2. Define as credenciais fixas do Super Admin da Toolbox
+        string adminEmail = "cayosantos@gmail.com";
+        string adminPassword = "mudar123";
+
+        var user = userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult();
+        if (user == null)
+        {
+            user = new IdentityUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
+
+            // Cria o usuário de forma síncrona com a senha padrão
+            var createResult = userManager.CreateAsync(user, adminPassword).GetAwaiter().GetResult();
+            if (createResult.Succeeded)
+            {
+                userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
+            }
+        }
+        else
+        {
+            // Se o usuário já existir, apenas garante que ele possui a role Admin
+            if (!userManager.IsInRoleAsync(user, roleName).GetAwaiter().GetResult())
+            {
+                userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Erro crítico ao gerar o Seed do Administrador.");
+    }
+}
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
