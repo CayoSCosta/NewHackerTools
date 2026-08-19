@@ -26,21 +26,61 @@
 </head>
 <body class="bg-terminal-dark text-gray-300 font-mono antialiased min-h-screen flex flex-col selection:bg-terminal-green selection:text-black">
 
-    <header class="fixed top-0 left-0 right-0 h-16 bg-terminal-panel border-b border-terminal-border z-50 flex items-center justify-between px-6 shadow-2xl">
-        <div class="flex items-center space-x-4">
-            <button id="sidebarToggle" class="text-terminal-green hover:text-white transition-colors focus:outline-none">
-                <i class="fa-solid fa-bars text-xl"></i>
-            </button>
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-terminal text-terminal-green animate-pulse"></i>
-                <span class="font-bold text-white tracking-widest text-lg">HACKER<span class="text-terminal-green">.TOOLBOX</span></span>
-            </div>
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<header class="fixed top-0 left-0 right-0 h-16 bg-terminal-panel border-b border-terminal-border z-50 flex items-center justify-between px-6 shadow-2xl">
+    <div class="flex items-center space-x-4">
+        <button id="sidebarToggle" class="text-terminal-green hover:text-white transition-colors focus:outline-none">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-terminal text-terminal-green animate-pulse"></i>
+            <span class="font-bold text-white tracking-widest text-lg">HACKER<span class="text-terminal-green">.TOOLBOX</span></span>
         </div>
-        <div class="flex items-center space-x-3 text-xs text-terminal-green bg-black px-3 py-1.5 rounded border border-terminal-border">
+    </div>
+
+    <div class="flex items-center space-x-6">
+        <div class="hidden md:flex items-center space-x-3 text-xs text-terminal-green bg-black px-3 py-1.5 rounded border border-terminal-border">
             <span class="inline-block w-2 h-2 rounded-full bg-terminal-green animate-ping"></span>
             <span>STATUS: SECURE_LINK</span>
         </div>
-    </header>
+
+        <div class="relative">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <button id="userMenuButton" class="flex items-center space-x-2 bg-terminal-dark border border-terminal-border px-3 py-1.5 rounded hover:border-terminal-green transition-colors focus:outline-none">
+                    <i class="fa-solid fa-user-secret text-terminal-green"></i>
+                    <span class="text-xs text-gray-300 font-mono">@User.Identity?.Name</span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-gray-500"></i>
+                </button>
+
+                <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-terminal-panel border border-terminal-border rounded shadow-2xl py-1 z-50 text-xs font-mono">
+                    <div class="px-4 py-2 border-b border-terminal-border text-gray-500 text-[10px]">
+                        SESSÃO ATIVA
+                    </div>
+                    <a asp-area="Identity" asp-page="/Account/Manage/Index" class="block px-4 py-2.5 text-gray-300 hover:bg-terminal-muted hover:text-terminal-green transition-colors">
+                        <i class="fa-solid fa-id-badge w-5"></i> Minha Conta
+                    </a>
+                    <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                        <button type="submit" class="w-full text-left px-4 py-2.5 text-red-400 hover:bg-terminal-muted hover:text-red-300 transition-colors flex items-center">
+                            <i class="fa-solid fa-power-off w-5"></i> Logoff
+                        </button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="flex items-center space-x-3 text-xs">
+                    <a asp-area="Identity" asp-page="/Account/Login" class="text-gray-400 hover:text-terminal-green transition-colors">Login</a>
+                    <span class="text-terminal-border">|</span>
+                    <a asp-area="Identity" asp-page="/Account/Register" class="bg-terminal-green text-black px-3 py-1.5 rounded font-bold hover:bg-emerald-400 transition-all">Registro</a>
+                </div>
+            }
+        </div>
+    </div>
+</header>
 
     <div class="flex pt-16 flex-1">
         
