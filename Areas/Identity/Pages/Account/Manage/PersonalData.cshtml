@@ -1,24 +1,30 @@
 ﻿@page
 @model PersonalDataModel
 @{
-    ViewData["Title"] = "Personal Data";
+    ViewData["Title"] = "Dados Pessoais";
     ViewData["ActivePage"] = ManageNavPages.PersonalData;
 }
 
-<h3>@ViewData["Title"]</h3>
+<div class="space-y-4 font-mono text-xs text-gray-300">
+    <h3 class="text-sm font-bold text-white tracking-wider">// ARQUIVO DE DADOS DO OPERADOR</h3>
+    
+    <div class="bg-terminal-dark border border-terminal-border p-4 rounded space-y-3">
+        <p>Sua conta contém dados pessoais que você nos forneceu. Esta ferramenta permite baixar ou expurgar permanentemente esses dados do banco de dados SQLite.</p>
+        <p class="text-red-400 font-bold">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i> ATENÇÃO: Exurgar estes dados removerá sua conta permanentemente, e ela não poderá ser recuperada.
+        </p>
+    </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
-        <form id="download-data" asp-page="DownloadPersonalData" method="post">
-            <button class="btn btn-primary" type="submit">Download</button>
-        </form>
-        <p>
-            <a id="delete" asp-page="DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
+    <form id="download-data" asp-page="DownloadPersonalData" method="post" class="inline">
+        <button type="submit" class="bg-terminal-dark border border-terminal-border text-terminal-green px-4 py-2 rounded hover:border-terminal-green uppercase tracking-wider font-bold">
+            > Descarregar Dados Pessoais (Download)
+        </button>
+    </form>
+
+    <div class="pt-4 border-t border-terminal-border">
+        <a id="delete" asp-page="DeletePersonalData" class="bg-red-950 text-red-400 border border-red-800 px-4 py-2 rounded inline-block hover:bg-red-900 uppercase tracking-wider font-bold">
+            > Expurgar Conta Definitivamente
+        </a>
     </div>
 </div>
 
