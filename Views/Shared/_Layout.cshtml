@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hacker Toolbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        terminal: {
+                            dark: '#050505',
+                            panel: '#0a0a0a',
+                            border: '#171717',
+                            green: '#00ff66',
+                            muted: '#262626'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-terminal-dark text-gray-300 font-mono antialiased min-h-screen flex flex-col selection:bg-terminal-green selection:text-black">
+
+    <header class="fixed top-0 left-0 right-0 h-16 bg-terminal-panel border-b border-terminal-border z-50 flex items-center justify-between px-6 shadow-2xl">
+        <div class="flex items-center space-x-4">
+            <button id="sidebarToggle" class="text-terminal-green hover:text-white transition-colors focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-terminal text-terminal-green animate-pulse"></i>
+                <span class="font-bold text-white tracking-widest text-lg">HACKER<span class="text-terminal-green">.TOOLBOX</span></span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3 text-xs text-terminal-green bg-black px-3 py-1.5 rounded border border-terminal-border">
+            <span class="inline-block w-2 h-2 rounded-full bg-terminal-green animate-ping"></span>
+            <span>STATUS: SECURE_LINK</span>
+        </div>
+    </header>
+
+    <div class="flex pt-16 flex-1">
+        
+        <aside id="sidebar" class="w-64 bg-terminal-panel border-r border-terminal-border transition-all duration-300 flex flex-col fixed inset-y-0 pt-16 z-40">
+            <div class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+                <div class="text-[10px] uppercase tracking-wider text-gray-600 px-3 mb-2 sidebar-label">Navegação</div>
+                
+                <a href="/" class="flex items-center space-x-3 px-3 py-2.5 rounded hover:bg-terminal-muted text-gray-400 hover:text-terminal-green transition-all group">
+                    <i class="fa-solid fa-house text-lg w-6 text-center group-hover:text-terminal-green"></i>
+                    <span class="sidebar-text whitespace-nowrap">Dashboard</span>
+                </a>
+
+                <div class="text-[10px] uppercase tracking-wider text-gray-600 px-3 mt-6 mb-2 sidebar-label">Ferramentas de Rede</div>
+                
+                <div>
+                    <a href="/ProxyReverso" class="flex items-center space-x-3 px-3 py-2.5 rounded bg-terminal-muted text-terminal-green border-l-2 border-terminal-green transition-all group">
+                        <i class="fa-solid fa-network-wired text-lg w-6 text-center"></i>
+                        <span class="sidebar-text whitespace-nowrap font-semibold">Proxy Reverso</span>
+                    </a>
+                </div>
+
+                <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded hover:bg-terminal-muted text-gray-400 hover:text-terminal-green transition-all group opacity-50 cursor-not-allowed">
+                    <i class="fa-solid fa-shield-halved text-lg w-6 text-center"></i>
+                    <span class="sidebar-text whitespace-nowrap">Scanner de Portas</span>
+                </a>
+
+                <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded hover:bg-terminal-muted text-gray-400 hover:text-terminal-green transition-all group opacity-50 cursor-not-allowed">
+                    <i class="fa-solid fa-bug text-lg w-6 text-center"></i>
+                    <span class="sidebar-text whitespace-nowrap">Payload Injector</span>
+                </a>
+            </div>
+
+            <div class="p-4 border-t border-terminal-border text-xs text-gray-600 sidebar-footer flex items-center justify-between">
+                <span>v1.0.0-core</span>
+                <i class="fa-solid fa-microchip text-terminal-green"></i>
+            </div>
+        </aside>
+
+        <main id="mainContent" class="flex-1 ml-64 p-8 transition-all duration-300">
+            <div class="max-w-5xl mx-auto">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarTexts = document.querySelectorAll('.sidebar-text');
+        const sidebarLabels = document.querySelectorAll('.sidebar-label');
+        const sidebarFooter = document.querySelector('.sidebar-footer span');
+
+        let isCollapsed = false;
+
+        sidebarToggle.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                mainContent.classList.remove('ml-64');
+                mainContent.classList.add('ml-20');
+                sidebarTexts.forEach(el => el.classList.add('hidden'));
+                sidebarLabels.forEach(el => el.classList.add('hidden'));
+                sidebarFooter.classList.add('hidden');
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                mainContent.classList.remove('ml-20');
+                mainContent.classList.add('ml-64');
+                sidebarTexts.forEach(el => el.classList.remove('hidden'));
+                sidebarLabels.forEach(el => el.classList.remove('hidden'));
+                sidebarFooter.classList.remove('hidden');
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
