@@ -158,6 +158,25 @@
         });
     </script>
 
+    <script>
+    // Script do Menu Suspenso (Dropdown do Usuário)
+    const userMenuButton = document.getElementById('userMenuButton');
+    const userDropdown = document.getElementById('userDropdown');
+
+    if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('hidden');
+        });
+
+        window.addEventListener('click', () => {
+            if (!userDropdown.classList.contains('hidden')) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    }
+</script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
