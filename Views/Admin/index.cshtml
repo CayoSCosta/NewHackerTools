@@ -1,0 +1,48 @@
+@model IEnumerable<Microsoft.AspNetCore.Identity.IdentityUser>
+
+@{
+    ViewData["Title"] = "Painel de Administração";
+}
+
+<div class="space-y-6">
+    <div class="border-b border-terminal-border pb-4 flex justify-between items-end">
+        <div>
+            <div class="text-xs text-red-500 mb-1">// SECURITY_CLEARANCE: LEVEL_ROOT</div>
+            <h1 class="text-2xl font-bold text-white tracking-wide">Gestão de Operadores e Permissões</h1>
+        </div>
+        <span class="text-xs bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded">Área Protegida</span>
+    </div>
+
+    <div class="bg-terminal-panel border border-terminal-border rounded-lg overflow-hidden shadow-2xl">
+        <div class="p-4 bg-terminal-dark border-b border-terminal-border text-xs text-gray-400 font-mono">
+            <span>REGISTROS DE ACESSO AO SISTEMA (SQLite)</span>
+        </div>
+        <table class="w-full text-left border-collapse text-sm">
+            <thead>
+                <tr class="border-b border-terminal-border text-gray-500 text-xs uppercase bg-black/40">
+                    <th class="p-4">Identificação (E-mail)</th>
+                    <th class="p-4">ID do Operador</th>
+                    <th class="p-4 text-right">Ações de Controle</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-terminal-border">
+                @foreach (var user in Model)
+                <tr class="hover:bg-terminal-muted/50 transition-colors">
+                    <td class="p-4 text-white font-mono flex items-center space-x-2">
+                        <i class="fa-solid fa-user text-terminal-green text-xs"></i>
+                        <span>@user.Email</span>
+                    </td>
+                    <td class="p-4 text-gray-500 text-xs font-mono">@user.Id</td>
+                    <td class="p-4 text-right">
+                        <form asp-action="ToggleAdmin" asp-route-userId="@user.Id" method="post" class="inline">
+                            <button type="submit" class="bg-terminal-dark border border-terminal-border text-xs px-3 py-1.5 rounded hover:border-terminal-green text-gray-300 hover:text-terminal-green transition-all">
+                                <i class="fa-solid fa-shield-halved mr-1"></i> Alternar Privilégio Admin
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
