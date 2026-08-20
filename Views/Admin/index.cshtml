@@ -8,13 +8,13 @@
 }
 
 <div class="space-y-6">
-    <div class="border-b border-terminal-border pb-4 flex justify-between items-end">
+    <div class="border-b border-gray-200 dark:border-terminal-border pb-4 flex justify-between items-end">
         <div>
             <div class="text-xs text-red-500 mb-1">// SECURITY_CLEARANCE: LEVEL_ROOT</div>
-            <h1 class="text-2xl font-bold text-white tracking-wide">Gestão de Operadores e Permissões</h1>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">Gestão de Operadores e Permissões</h1>
         </div>
         <div class="flex space-x-3">
-            <a asp-action="Roles" class="text-xs bg-terminal-dark border border-terminal-border px-3 py-1.5 rounded text-terminal-green hover:border-terminal-green transition-all">
+            <a asp-action="Roles" class="text-xs bg-white dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border px-3 py-1.5 rounded text-terminal-green hover:border-terminal-green transition-all duration-200">
                 <i class="fa-solid fa-users-rectangle mr-1"></i> Gerenciar Grupos
             </a>
             <span class="text-xs bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded">Área Protegida</span>
@@ -34,14 +34,14 @@
         </div>
     }
 
-    <div class="bg-terminal-panel border border-terminal-border rounded-lg overflow-hidden shadow-2xl">
-        <div class="p-4 bg-terminal-dark border-b border-terminal-border text-xs text-gray-400 font-mono flex justify-between items-center">
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg overflow-hidden shadow-2xl transition-colors duration-200">
+        <div class="p-4 bg-gray-50 dark:bg-terminal-dark border-b border-gray-200 dark:border-terminal-border text-xs text-gray-700 dark:text-gray-300 font-mono flex justify-between items-center">
             <span>REGISTROS DE ACESSO AO SISTEMA (SQLite)</span>
             <span class="text-terminal-green">Total de Operadores: @Model.Count()</span>
         </div>
         <table class="w-full text-left border-collapse text-sm">
             <thead>
-                <tr class="border-b border-terminal-border text-gray-500 text-xs uppercase bg-black/40">
+                <tr class="border-b border-gray-200 dark:border-terminal-border text-gray-600 dark:text-gray-400 text-xs uppercase bg-gray-50 dark:bg-black/40">
                     <th class="p-4">Identificação / E-mail</th>
                     <th class="p-4">Status da Conta</th>
                     <th class="p-4">Grupos Atuais</th>
@@ -56,8 +56,8 @@
                         var isBanned = user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
                         var currentRoles = userRoles.ContainsKey(user.Id) ? userRoles[user.Id] : new List<string>();
 
-                        <tr class="hover:bg-terminal-muted/50 transition-colors">
-                            <td class="p-4 text-white font-mono flex items-center space-x-2">
+                        <tr class="hover:bg-gray-100 dark:hover:bg-terminal-muted/50 transition-colors duration-200">
+                            <td class="p-4 text-gray-900 dark:text-white font-mono flex items-center space-x-2">
                                 <i class="fa-solid fa-user-secret text-terminal-green text-xs"></i>
                                 <span>@user.Email</span>
                             </td>
@@ -76,7 +76,7 @@
                                 <div class="flex flex-wrap gap-1">
                                     @foreach (var r in currentRoles)
                                     {
-                                        <span class="bg-terminal-dark border border-terminal-border text-terminal-green px-2 py-0.5 rounded text-[10px]">@r</span>
+                                        <span class="bg-white dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border text-terminal-green px-2 py-0.5 rounded text-[10px]">@r</span>
                                     }
                                     @if (!currentRoles.Any())
                                     {
@@ -95,27 +95,27 @@
                                             <input type="hidden" name="userId" value="@user.Id" />
                                             <input type="hidden" name="roleName" value="@role.Name" />
                                             <input type="hidden" name="assign" value="@(hasRole ? "false" : "true")" />
-                                            <button type="submit" class="bg-terminal-dark border @(hasRole ? "border-terminal-green text-terminal-green" : "border-terminal-border text-gray-500") text-[10px] px-2 py-1 rounded hover:border-white transition-all" title="Alternar grupo @role.Name">
+                                            <button type="submit" class="bg-white dark:bg-terminal-dark border @(hasRole ? "border-terminal-green text-terminal-green" : "border-gray-200 dark:border-terminal-border text-gray-600 dark:text-gray-400") text-[10px] px-2 py-1 rounded hover:border-white transition-all duration-200" title="Alternar grupo @role.Name">
                                                 @(hasRole ? $"-{role.Name}" : $"+{role.Name}")
                                             </button>
                                         </form>
                                     }
 
                                     <form asp-action="ToggleBan" asp-route-userId="@user.Id" method="post" class="inline">
-                                        <button type="submit" class="bg-terminal-dark border border-terminal-border text-xs px-2.5 py-1.5 rounded hover:border-yellow-500 text-gray-300 hover:text-yellow-400 transition-all" title="@(isBanned ? "Desbloquear Acesso" : "Banir Operador")">
+                                        <button type="submit" class="bg-white dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border text-xs px-2.5 py-1.5 rounded hover:border-yellow-500 text-gray-700 dark:text-gray-300 hover:text-yellow-400 transition-all duration-200" title="@(isBanned ? "Desbloquear Acesso" : "Banir Operador")">
                                             <i class="fa-solid fa-user-slash"></i>
                                         </button>
                                     </form>
 
                                     <form asp-action="DeleteUser" asp-route-userId="@user.Id" method="post" class="inline" onsubmit="return confirm('Tem certeza que deseja expurgar este operador do sistema?');">
-                                        <button type="submit" class="bg-terminal-dark border border-terminal-border text-xs px-2.5 py-1.5 rounded hover:border-red-500 text-gray-300 hover:text-red-400 transition-all" title="Expurgar Usuário">
+                                        <button type="submit" class="bg-white dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border text-xs px-2.5 py-1.5 rounded hover:border-red-500 text-gray-700 dark:text-gray-300 hover:text-red-400 transition-all duration-200" title="Expurgar Usuário">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </form>
                                 }
                                 else
                                 {
-                                    <span class="text-xs text-gray-600 font-mono italic">Sistema Root</span>
+                                    <span class="text-xs text-gray-700 dark:text-gray-400 font-mono italic">Sistema Root</span>
                                 }
                             </td>
                         </tr>
@@ -124,7 +124,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="4" class="p-6 text-center text-gray-500 text-xs font-mono">
+                        <td colspan="4" class="p-6 text-center text-gray-700 dark:text-gray-400 text-xs font-mono">
                             Nenhum operador registrado no sistema.
                         </td>
                     </tr>

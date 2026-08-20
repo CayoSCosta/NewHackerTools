@@ -6,15 +6,15 @@
 
 <div class="space-y-6 font-mono">
     
-    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl flex items-center justify-between">
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 shadow-2xl flex items-center justify-between transition-colors duration-200">
         <div>
             <div class="flex items-center space-x-2 text-xs text-yellow-500 mb-1">
                 <i class="fa-solid fa-link"></i>
                 <span>MKT_TOOLS // URL_SHORTENER</span>
             </div>
-            <h1 class="text-xl font-bold text-white tracking-wider">CYBER LINK SHORTENER</h1>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-wider">CYBER LINK SHORTENER</h1>
         </div>
-        <div class="hidden md:flex items-center space-x-2 text-xs bg-black px-3 py-1.5 rounded border border-terminal-border text-yellow-500">
+        <div class="hidden md:flex items-center space-x-2 text-xs bg-gray-50 dark:bg-terminal-dark px-3 py-1.5 rounded border border-gray-200 dark:border-terminal-border text-yellow-500 transition-colors duration-200">
             <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
             <span>REDIRECT ENGINE ACTIVE</span>
         </div>
@@ -22,18 +22,18 @@
 
     @if (TempData["Error"] != null)
     {
-        <div class="bg-black border border-red-500 rounded p-4 text-xs text-red-400">[ERRO] > @TempData["Error"]</div>
+        <div class="bg-gray-50 dark:bg-terminal-dark border border-red-500 rounded p-4 text-xs text-red-500 dark:text-red-400 transition-colors duration-200">[ERRO] > @TempData["Error"]</div>
     }
     @if (TempData["Success"] != null)
     {
-        <div class="bg-black border border-terminal-green rounded p-4 text-xs text-terminal-green">[SUCESSO] > @TempData["Success"]</div>
+        <div class="bg-gray-50 dark:bg-terminal-dark border border-terminal-green rounded p-4 text-xs text-terminal-green transition-colors duration-200">[SUCESSO] > @TempData["Success"]</div>
     }
 
-    <form asp-action="Create" method="post" class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+    <form asp-action="Create" method="post" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 space-y-4 transition-colors duration-200">
         <div class="space-y-2">
-            <label class="block text-xs text-gray-400 uppercase tracking-wider">// COLE A URL LONGA PARA ENCURTAR</label>
+            <label class="block text-xs text-gray-700 dark:text-gray-300 uppercase tracking-wider">// COLE A URL LONGA PARA ENCURTAR</label>
             <div class="flex space-x-2">
-                <input type="url" name="originalUrl" required class="flex-1 bg-black border border-terminal-border rounded p-3 text-xs text-yellow-500 focus:outline-none focus:border-yellow-500 font-mono" placeholder="https://exemplo.com/pagina-muito-longa-com-parametros...">
+                <input type="url" name="originalUrl" required class="flex-1 bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-yellow-500 focus:outline-none focus:border-yellow-500 font-mono transition-colors duration-200" placeholder="https://exemplo.com/pagina-muito-longa-com-parametros...">
                 <button type="submit" class="bg-yellow-500 text-black px-6 py-3 rounded font-bold text-xs hover:bg-yellow-400 transition-all">
                     ENCURTAR
                 </button>
@@ -41,13 +41,13 @@
         </div>
     </form>
 
-    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
-        <h2 class="text-xs text-gray-400 uppercase tracking-widest">// LINKS_ATIVOS_NO_SISTEMA</h2>
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 space-y-4 transition-colors duration-200">
+        <h2 class="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest">// LINKS_ATIVOS_NO_SISTEMA</h2>
         
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
                 <thead>
-                    <tr class="border-b border-terminal-border text-gray-500">
+                    <tr class="border-b border-gray-200 dark:border-terminal-border text-gray-600 dark:text-gray-400">
                         <th class="pb-3">URL ORIGINAL</th>
                         <th class="pb-3">LINK ENCURTADO</th>
                         <th class="pb-3 text-center">CLIQUES</th>
@@ -61,19 +61,19 @@
                         {
                             var shortLink = $"{Context.Request.Scheme}://{Context.Request.Host}/s/{item.Code}";
                             <tr class="hover:bg-terminal-muted/40 transition-colors">
-                                <td class="py-3 max-w-xs truncate text-gray-400" title="@item.OriginalUrl">@item.OriginalUrl</td>
+                                <td class="py-3 max-w-xs truncate text-gray-700 dark:text-gray-300" title="@item.OriginalUrl">@item.OriginalUrl</td>
                                 <td class="py-3">
                                     <a href="@shortLink" target="_blank" class="text-terminal-green hover:underline font-bold">@shortLink</a>
                                 </td>
                                 <td class="py-3 text-center text-yellow-500 font-bold">@item.ClickCount</td>
-                                <td class="py-3 text-right text-gray-500">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="py-3 text-right text-gray-700 dark:text-gray-400">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="4" class="py-6 text-center text-gray-600">Nenhum link encurtado registrado até o momento.</td>
+                            <td colspan="4" class="py-6 text-center text-gray-700 dark:text-gray-400">Nenhum link encurtado registrado até o momento.</td>
                         </tr>
                     }
                 </tbody>

@@ -4,7 +4,7 @@
 
 <div class="space-y-8 font-mono">
     
-    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl relative overflow-hidden">
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 shadow-2xl relative overflow-hidden transition-colors duration-200">
         <div class="absolute top-0 right-0 p-4 opacity-10 text-terminal-green text-6xl pointer-events-none">
             <i class="fa-solid fa-terminal"></i>
         </div>
@@ -12,40 +12,40 @@
             <span class="inline-block w-2 h-2 rounded-full bg-terminal-green animate-ping"></span>
             <span>ROOT@HACKERBOX:~# ./init_dashboard.sh</span>
         </div>
-        <h1 class="text-2xl font-bold text-white tracking-wider mb-2">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wider mb-2">
             BEM-VINDO AO <span class="text-terminal-green">HACKER.TOOLBOX</span>
         </h1>
-        <p class="text-xs text-gray-400 max-w-2xl leading-relaxed">
+        <p class="text-xs text-gray-700 dark:text-gray-300 max-w-2xl leading-relaxed">
             Ambiente seguro de operações e utilitários de alta performance desenvolvido sobre .NET 9. Todos os canais de criptografia e túneis de dados estão operando sob supervisão direta do kernel.
         </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        <div class="bg-terminal-panel border border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors">
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors duration-200">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-[10px] text-gray-500 uppercase tracking-wider">// MÓDULOS_ATIVOS</span>
+                <span class="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wider">// MÓDULOS_ATIVOS</span>
                 <i class="fa-solid fa-microchip text-terminal-green"></i>
             </div>
-            <div class="text-2xl font-bold text-white">04 / 04</div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">04 / 04</div>
             <div class="text-[10px] text-terminal-green mt-1">Integridade 100% Estável</div>
         </div>
 
-        <div class="bg-terminal-panel border border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors">
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors duration-200">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-[10px] text-gray-500 uppercase tracking-wider">// RUNTIME_ENVIRONMENT</span>
+                <span class="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wider">// RUNTIME_ENVIRONMENT</span>
                 <i class="fa-solid fa-server text-terminal-green"></i>
             </div>
-            <div class="text-2xl font-bold text-white">.NET 9.0</div>
-            <div class="text-[10px] text-gray-400 mt-1">Core Server: Online</div>
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">.NET 9.0</div>
+            <div class="text-[10px] text-gray-700 dark:text-gray-300 mt-1">Core Server: Online</div>
         </div>
 
-        <div class="bg-terminal-panel border border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors">
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-5 hover:border-terminal-green transition-colors duration-200">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-[10px] text-gray-500 uppercase tracking-wider">// NIVEL_DE_ACESSO</span>
+                <span class="text-[10px] text-gray-600 dark:text-gray-400 uppercase tracking-wider">// NIVEL_DE_ACESSO</span>
                 <i class="fa-solid fa-shield-halved text-terminal-green"></i>
             </div>
-            <div class="text-2xl font-bold text-white">
+            <div class="text-2xl font-bold text-gray-900 dark:text-white">
                 @(User.IsInRole("Admin") ? "SUPER_USER" : "OPERATOR")
             </div>
             <div class="text-[10px] text-terminal-green mt-1">Sessão Criptografada</div>
@@ -54,51 +54,51 @@
     </div>
 
     <div class="space-y-4">
-        <h2 class="text-xs text-gray-400 uppercase tracking-widest">// ACESSO_DIRETO_A_FERRAMENTAS</h2>
+        <h2 class="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest">// ACESSO_DIRETO_A_FERRAMENTAS</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             
-            <a href="#" class="bg-terminal-panel border border-terminal-border rounded-lg p-4 hover:bg-terminal-muted hover:border-terminal-green transition-all group">
+            <a href="#" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-terminal-muted hover:border-terminal-green transition-all duration-200 group">
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-8 h-8 rounded bg-black border border-terminal-border flex items-center justify-center text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-colors">
+                    <div class="w-8 h-8 rounded bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border flex items-center justify-center text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-colors duration-200">
                         <i class="fa-solid fa-hashtag text-sm"></i>
                     </div>
-                    <span class="text-sm font-bold text-white group-hover:text-terminal-green transition-colors">Hashes & Cripto</span>
+                    <span class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-terminal-green transition-colors duration-200">Hashes & Cripto</span>
                 </div>
-                <p class="text-[11px] text-gray-500 leading-normal">Geração e verificação de hashes criptográficos (SHA, MD5, Base64).</p>
+                <p class="text-[11px] text-gray-700 dark:text-gray-300 leading-normal">Geração e verificação de hashes criptográficos (SHA, MD5, Base64).</p>
             </a>
 
-            <a href="/Tunnel/Index" class="bg-terminal-panel border border-terminal-border rounded-lg p-4 hover:bg-terminal-muted hover:border-terminal-green transition-all group">
+            <a href="/Tunnel/Index" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-terminal-muted hover:border-terminal-green transition-all duration-200 group">
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-8 h-8 rounded bg-black border border-terminal-border flex items-center justify-center text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-colors">
+                    <div class="w-8 h-8 rounded bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border flex items-center justify-center text-terminal-green group-hover:bg-terminal-green group-hover:text-black transition-colors duration-200">
                         <i class="fa-solid fa-satellite-dish text-sm"></i>
                     </div>
-                    <span class="text-sm font-bold text-white group-hover:text-terminal-green transition-colors">Tunelador TCP</span>
+                    <span class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-terminal-green transition-colors duration-200">Tunelador TCP</span>
                 </div>
-                <p class="text-[11px] text-gray-500 leading-normal">Abertura e monitoramento de conexões de túneis de rede seguros.</p>
+                <p class="text-[11px] text-gray-700 dark:text-gray-300 leading-normal">Abertura e monitoramento de conexões de túneis de rede seguros.</p>
             </a>
 
-            <a href="/Marketing/ImageConverter" class="bg-terminal-panel border border-terminal-border rounded-lg p-4 hover:bg-terminal-muted hover:border-terminal-green transition-all group">
+            <a href="/Marketing/ImageConverter" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-terminal-muted hover:border-terminal-green transition-all duration-200 group">
                 <div class="flex items-center space-x-3 mb-2">
-                    <div class="w-8 h-8 rounded bg-black border border-terminal-border flex items-center justify-center text-yellow-500 group-hover:bg-yellow-500 group-hover:text-black transition-colors">
+                    <div class="w-8 h-8 rounded bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border flex items-center justify-center text-yellow-500 group-hover:bg-yellow-500 group-hover:text-black transition-colors duration-200">
                         <i class="fa-solid fa-image text-sm"></i>
                     </div>
-                    <span class="text-sm font-bold text-white group-hover:text-terminal-green transition-colors">Conversor de Imagens</span>
+                    <span class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-terminal-green transition-colors duration-200">Conversor de Imagens</span>
                 </div>
-                <p class="text-[11px] text-gray-500 leading-normal">Otimização e conversão em lote de ativos visuais de marketing.</p>
+                <p class="text-[11px] text-gray-700 dark:text-gray-300 leading-normal">Otimização e conversão em lote de ativos visuais de marketing.</p>
             </a>
 
         </div>
     </div>
 
-    <div class="bg-black border border-terminal-border rounded-lg p-4 text-xs space-y-1.5 shadow-inner">
-        <div class="text-[10px] text-gray-600 border-b border-terminal-border pb-1 mb-2 flex justify-between">
+    <div class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded-lg p-4 text-xs space-y-1.5 shadow-inner transition-colors duration-200">
+        <div class="text-[10px] text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-terminal-border pb-1 mb-2 flex justify-between">
             <span>TERMINAL_OUTPUT_FEED</span>
             <span class="text-terminal-green">CONNECTED</span>
         </div>
-        <div class="text-gray-500">[00:00:01] &gt; System initialized successfully on ASP.NET Core 9.0</div>
-        <div class="text-gray-500">[00:00:02] &gt; Database SQLite connected: 'hackerbox.db'</div>
-        <div class="text-gray-500">[00:00:03] &gt; Security middleware loaded: Anti-CSRF & RBAC active</div>
+        <div class="text-gray-700 dark:text-gray-300">[00:00:01] &gt; System initialized successfully on ASP.NET Core 9.0</div>
+        <div class="text-gray-700 dark:text-gray-300">[00:00:02] &gt; Database SQLite connected: 'hackerbox.db'</div>
+        <div class="text-gray-700 dark:text-gray-300">[00:00:03] &gt; Security middleware loaded: Anti-CSRF & RBAC active</div>
         <div class="text-terminal-green font-bold">[OK] &gt; Waiting for operator commands...</div>
     </div>
 
