@@ -1,3 +1,4 @@
+using HackerToolbox.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,6 +6,8 @@ namespace HackerToolbox.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
+        public DbSet<ShortUrl> ShortUrls { get; set; }
+        
         // Construtor principal usado pela aplicação em tempo de execução
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
