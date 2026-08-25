@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿@* <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 
 <head>
@@ -328,4 +328,288 @@
             @await RenderSectionAsync("Scripts", required: false)
         </body>
 
-    </html>
+    </html> *@
+    <!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hacker Toolbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        terminal: {
+                            dark: '#050505',
+                            panel: '#0a0a0a',
+                            border: '#171717',
+                            green: '#00ff66',
+                            muted: '#262626'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-terminal-dark text-gray-800 dark:text-gray-300 font-mono antialiased min-h-screen flex flex-col selection:bg-terminal-green selection:text-black transition-colors duration-200">
+
+    @using Microsoft.AspNetCore.Identity
+    @inject SignInManager<IdentityUser> SignInManager
+    @inject UserManager<IdentityUser> UserManager
+
+    <header class="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-terminal-panel border-b border-gray-200 dark:border-terminal-border z-50 flex items-center justify-between px-6 shadow-2xl transition-colors duration-200">
+        <div class="flex items-center space-x-4">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <button id="sidebarToggle" class="text-terminal-green hover:text-emerald-500 transition-colors focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            }
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-terminal text-terminal-green animate-pulse"></i>
+                <span class="font-bold text-gray-900 dark:text-white tracking-widest text-lg">HACKER<span class="text-terminal-green">.TOOLBOX</span></span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                <div class="hidden md:flex items-center space-x-3 text-xs text-terminal-green bg-gray-100 dark:bg-black px-3 py-1.5 rounded border border-gray-200 dark:border-terminal-border">
+                    <span class="inline-block w-2 h-2 rounded-full bg-terminal-green animate-ping"></span>
+                    <span>STATUS: SECURE_LINK</span>
+                </div>
+            }
+
+            <button id="themeToggle" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-terminal-muted transition-colors focus:outline-none" title="Alternar Tema">
+                <i id="moonIcon" class="fa-solid fa-moon text-base"></i>
+                <i id="sunIcon" class="fa-solid fa-sun text-base text-amber-400 hidden"></i>
+            </button>
+
+            <div class="relative">
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <button id="userMenuButton" class="flex items-center space-x-2 bg-gray-100 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border px-3 py-1.5 rounded hover:border-terminal-green transition-colors focus:outline-none">
+                        <i class="fa-solid fa-user-secret text-terminal-green"></i>
+                        <span class="text-xs text-gray-700 dark:text-gray-300 font-mono">@User.Identity?.Name</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-gray-500"></i>
+                    </button>
+
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded shadow-2xl py-1 z-50 text-xs font-mono">
+                        <div class="px-4 py-2 border-b border-gray-200 dark:border-terminal-border text-gray-500 text-[10px]">
+                            SESSÃO ATIVA
+                        </div>
+                        <a asp-area="Identity" asp-page="/Account/Manage/Index" class="block px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-terminal-muted hover:text-terminal-green transition-colors">
+                            <i class="fa-solid fa-id-badge w-5"></i> Minha Conta
+                        </a>
+                        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                            <button type="submit" class="w-full text-left px-4 py-2.5 text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-terminal-muted hover:text-red-600 dark:hover:text-red-300 transition-colors flex items-center">
+                                <i class="fa-solid fa-power-off w-5"></i> Logoff
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex items-center space-x-3 text-xs">
+                        <a asp-area="Identity" asp-page="/Account/Login" class="text-gray-600 dark:text-gray-400 hover:text-terminal-green transition-colors">Login</a>
+                        <span class="text-gray-300 dark:text-terminal-border">|</span>
+                        <a asp-area="Identity" asp-page="/Account/Register" class="bg-terminal-green text-black px-3 py-1.5 rounded font-bold hover:bg-emerald-400 transition-all">Registro</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </header>
+
+    <div class="flex pt-16 flex-1">
+        @if (SignInManager.IsSignedIn(User))
+        {
+            <aside id="sidebar" class="w-64 bg-white dark:bg-terminal-panel border-r border-gray-200 dark:border-terminal-border transition-all duration-300 flex flex-col fixed inset-y-0 pt-16 z-40">
+                <div class="flex-1 py-6 px-4 space-y-4 overflow-y-auto">
+                    <div class="space-y-1">
+                        <div class="text-[10px] text-gray-500 font-mono uppercase tracking-wider px-3 mb-1 sidebar-label">// SYSTEM_CORE</div>
+                        <a href="/Home/Index" class="flex items-center space-x-3 px-3 py-2.5 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors" title="Visão Geral">
+                            <i class="fa-solid fa-terminal w-5 text-center"></i>
+                            <span class="sidebar-text text-sm font-mono">Visão Geral</span>
+                        </a>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a href="/Admin/Index" class="flex items-center space-x-3 px-3 py-2.5 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors" title="Operadores">
+                                <i class="fa-solid fa-users-gear w-5 text-center"></i>
+                                <span class="sidebar-text text-sm font-mono">Operadores</span>
+                            </a>
+                        }
+                    </div>
+
+                    <div class="space-y-1 pt-3 border-t border-gray-200 dark:border-terminal-border/40">
+                        <button type="button" onclick="toggleSubmenu('devToolsSubmenu', this)" class="w-full flex items-center justify-between px-3 py-2 text-[10px] text-terminal-green font-mono uppercase tracking-wider hover:text-emerald-600 dark:hover:text-white transition-colors focus:outline-none" title="Dev Tools">
+                            <span class="flex items-center space-x-2">
+                                <i class="fa-solid fa-code text-xs w-5 text-center"></i>
+                                <span class="sidebar-text">// DEV_TOOLS</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200 arrow-icon sidebar-arrow"></i>
+                        </button>
+                        <div id="devToolsSubmenu" class="submenu space-y-1 pl-2 transition-all duration-200">
+                            <a href="/DevTools/JsonJwtTool" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="JSON & JWT Inspector">
+                                <i class="fa-solid fa-hashtag w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">JSON & JWT Inspector</span>
+                            </a>
+                            <a href="/DevTools/HashesECripto" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Hashes & Cripto">
+                                <i class="fa-solid fa-hashtag w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Hashes & Cripto</span>
+                            </a>
+                            <a href="/DevTools/TuneladorTcp" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Tunelador TCP">
+                                <i class="fa-solid fa-satellite-dish w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Tunelador TCP</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 pt-3 border-t border-gray-200 dark:border-terminal-border/40">
+                        <button type="button" onclick="toggleSubmenu('mktToolsSubmenu', this)" class="w-full flex items-center justify-between px-3 py-2 text-[10px] text-yellow-600 dark:text-yellow-500 font-mono uppercase tracking-wider hover:text-yellow-700 dark:hover:text-white transition-colors focus:outline-none" title="Marketing Tools">
+                            <span class="flex items-center space-x-2">
+                                <i class="fa-solid fa-bullhorn text-xs w-5 text-center"></i>
+                                <span class="sidebar-text">// MKT_TOOLS</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200 arrow-icon sidebar-arrow"></i>
+                        </button>
+                        <div id="mktToolsSubmenu" class="submenu space-y-1 pl-2 transition-all duration-200">
+                            <a href="/Shortener/Index" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Encurtador de URLs">
+                                <i class="fa-solid fa-link w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Encurtador de URLs</span>
+                            </a>
+                            <a href="/MktTools/ImageConverter" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Conversor de Imagens">
+                                <i class="fa-solid fa-image w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Conversor de Imagens</span>
+                            </a>
+                            <a href="/MktTools/ExifCleaner" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-terminal-muted text-gray-700 dark:text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Exif Cleaner">
+                                <i class="fa-solid fa-shield-halved w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Exif Cleaner</span>
+                            </a>
+                            <a href="/Marketing/UtmGenerator" class="flex items-center space-x-3 px-3 py-2 rounded hover:bg-terminal-muted text-gray-300 hover:text-terminal-green transition-colors text-xs" title="Gerador de UTM">
+                                <i class="fa-solid fa-compass-drafting w-5 text-center"></i>
+                                <span class="sidebar-text font-mono">Gerador de UTM</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        }
+
+        <main id="mainContent" class="flex-1 @(SignInManager.IsSignedIn(User) ? "ml-64" : "") p-8 transition-all duration-300">
+            <div class="max-w-5xl mx-auto">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const moonIcon = document.getElementById('moonIcon');
+        const sunIcon = document.getElementById('sunIcon');
+        const htmlElement = document.documentElement;
+
+        function updateThemeIcons() {
+            if (htmlElement.classList.contains('dark')) {
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+            } else {
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+            }
+        }
+        updateThemeIcons();
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateThemeIcons();
+        });
+    </script>
+
+    <script>
+        function toggleSubmenu(submenuId, buttonElement) {
+            const submenu = document.getElementById(submenuId);
+            const arrow = buttonElement.querySelector('.arrow-icon');
+            if (submenu) submenu.classList.toggle('hidden');
+            if (arrow) arrow.classList.toggle('rotate-180');
+        }
+
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        if (sidebarToggle) {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarTexts = document.querySelectorAll('.sidebar-text');
+            const sidebarLabels = document.querySelectorAll('.sidebar-label');
+            const sidebarArrows = document.querySelectorAll('.sidebar-arrow');
+            const submenus = document.querySelectorAll('.submenu');
+
+            let isCollapsed = false;
+
+            sidebarToggle.addEventListener('click', () => {
+                isCollapsed = !isCollapsed;
+                if (isCollapsed) {
+                    sidebar.classList.remove('w-64');
+                    sidebar.classList.add('w-20');
+                    mainContent.classList.remove('ml-64');
+                    mainContent.classList.add('ml-20');
+
+                    sidebarTexts.forEach(el => el.classList.add('hidden'));
+                    sidebarLabels.forEach(el => el.classList.add('hidden'));
+                    sidebarArrows.forEach(el => el.classList.add('hidden'));
+                    submenus.forEach(el => el.classList.add('hidden'));
+                } else {
+                    sidebar.classList.remove('w-20');
+                    sidebar.classList.add('w-64');
+                    mainContent.classList.remove('ml-20');
+                    mainContent.classList.add('ml-64');
+
+                    sidebarTexts.forEach(el => el.classList.remove('hidden'));
+                    sidebarLabels.forEach(el => el.classList.remove('hidden'));
+                    sidebarArrows.forEach(el => el.classList.remove('hidden'));
+                    submenus.forEach(el => el.classList.remove('hidden'));
+                }
+            });
+        }
+    </script>
+
+    <script>
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userMenuButton && userDropdown) {
+            userMenuButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('hidden');
+            });
+
+            window.addEventListener('click', () => {
+                if (!userDropdown.classList.contains('hidden')) {
+                    userDropdown.classList.add('hidden');
+                }
+            });
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

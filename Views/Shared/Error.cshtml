@@ -1,25 +1,77 @@
-﻿@model ErrorViewModel
-@{
-    ViewData["Title"] = "Error";
+﻿@{
+    ViewData["Title"] = "Erro do Sistema";
+    var statusCode = ViewData["StatusCode"] ?? 404;
+
+    string errorCode = statusCode.ToString();
+    string errorTitle = "FALHA DESCONHECIDA NO SISTEMA";
+    string errorDesc = "Ocorreu um comportamento inesperado durante a execução da instrução.";
+    string terminalTag = "// SYSTEM_EXCEPTION";
+
+    switch (statusCode)
+    {
+        case 401:
+            terminalTag = "// ACCESS_GATEWAY_401";
+            errorTitle = "AUTENTICAÇÃO EXIGIDA";
+            errorDesc = "Credenciais de operador ausentes ou sessão expirada. Faça login para prosseguir.";
+            break;
+        case 403:
+            terminalTag = "// SECURITY_VIOLATION_403";
+            errorTitle = "ACESSO NEGADO";
+            errorDesc = "Você não possui privilégios suficientes (Role de Operador/Admin) para executar este comando.";
+            break;
+        case 404:
+            terminalTag = "// TARGET_NOT_FOUND_404";
+            errorTitle = "ROTA NÃO ENCONTRADA";
+            errorDesc = "O endpoint ou recurso solicitado não existe neste servidor ou foi movido.";
+            break;
+        case 500:
+            terminalTag = "// CRITICAL_FAULT_500";
+            errorTitle = "ERRO INTERNO DO SERVIDOR";
+            errorDesc = "Uma falha crítica ocorreu no monólito em .NET. Os logs de despejo de memória foram salvos.";
+            break;
+    }
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="flex justify-center items-center min-h-[70vh]">
+    <div class="w-full max-w-xl bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-8 shadow-2xl relative transition-colors duration-200">
+        
+        <!-- Barra de título do terminal -->
+        <div class="absolute top-0 left-0 right-0 h-2 bg-gray-100 dark:bg-terminal-muted rounded-t-lg flex items-center px-3 space-x-1.5 border-b border-gray-200 dark:border-terminal-border transition-colors duration-200">
+            <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+            <span class="w-2 h-2 rounded-full bg-yellow-500 inline-block"></span>
+            <span class="w-2 h-2 rounded-full bg-terminal-green inline-block"></span>
+        </div>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+        <!-- Cabeçalho do Erro -->
+        <div class="mt-4 mb-6 text-center">
+            <div class="text-xs text-red-500 dark:text-terminal-green mb-1">@terminalTag</div>
+            <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-widest">ERR_CODE: @errorCode</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">@errorTitle</p>
+        </div>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+        <!-- Bloco de Terminal Simulando Log -->
+        <div class="bg-gray-100 dark:bg-black border border-gray-200 dark:border-terminal-border rounded p-4 mb-6 text-xs font-mono space-y-2">
+            <div class="text-gray-500 dark:text-gray-500">// [DIAGNOSTIC_LOG]</div>
+            <div class="text-gray-700 dark:text-gray-300">> Status Code: <span class="text-red-500 font-bold">@errorCode</span></div>
+            <div class="text-gray-700 dark:text-gray-300">> Detalhes: @errorDesc</div>
+            <div class="text-terminal-green animate-pulse">> Sugestão: Retorne à base segura ou efetue autenticação.</div>
+        </div>
+
+        <!-- Ações de Retorno -->
+        <div class="flex flex-col sm:flex-row gap-3">
+            <a href="/Home/Index" class="flex-1 bg-gray-200 dark:bg-terminal-muted hover:bg-gray-300 dark:hover:bg-terminal-border text-gray-800 dark:text-white text-center font-bold py-2.5 rounded transition-all uppercase tracking-wider text-xs flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-house"></i>
+                <span>// IR PARA HOME</span>
+            </a>
+            
+            @if (statusCode.ToString() == "401" || statusCode.ToString() == "403")
+            {
+                <a asp-area="Identity" asp-page="/Account/Login" class="flex-1 bg-terminal-green text-black text-center font-bold py-2.5 rounded hover:bg-emerald-400 transition-all uppercase tracking-wider text-xs shadow-[0_0_15px_rgba(0,255,102,0.2)] flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>// FAZER LOGIN</span>
+                </a>
+            }
+        </div>
+
+    </div>
+</div>

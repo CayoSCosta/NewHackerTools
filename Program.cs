@@ -97,6 +97,16 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles(); // Importante para carregar estilos e scripts
 
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.UseRouting();
 
 // 3. Middlewares de Segurança (Authentication deve vir SEMPRE antes de Authorization)
