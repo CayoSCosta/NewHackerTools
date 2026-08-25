@@ -85,6 +85,13 @@ namespace HackerToolbox.Controllers
             return View();
         }
 
+        // Rota: /MktTools/UtmGenerator
+        [HttpGet]
+        public IActionResult UtmGenerator()
+        {
+            return View();
+        }
+
         // Endpoint POST para Limpeza de Metadados em Massa (Imagens, PDFs, Docs)
         [HttpPost]
         public async Task<IActionResult> ScrubMetadata(IFormFile scrubFile)

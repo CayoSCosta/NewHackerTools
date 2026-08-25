@@ -43,33 +43,41 @@ using (var scope = app.Services.CreateScope())
             roleManager.CreateAsync(new IdentityRole(roleName)).GetAwaiter().GetResult();
         }
 
-        // 2. Define as credenciais fixas do Super Admin da Toolbox
-        string adminEmail = "cayosantos@gmail.com";
-        string adminPassword = "mudar123";
+        // 2. Credenciais do Super Admin vindas de User Secrets / variáveis de ambiente (nunca hardcoded)
+        string? adminEmail = builder.Configuration["AdminSeed:Email"];
+        string? adminPassword = builder.Configuration["AdminSeed:Password"];
 
-        var user = userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult();
-        if (user == null)
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
         {
-            user = new IdentityUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true
-            };
-
-            // Cria o usuário de forma síncrona com a senha padrão
-            var createResult = userManager.CreateAsync(user, adminPassword).GetAwaiter().GetResult();
-            if (createResult.Succeeded)
-            {
-                userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
-            }
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("AdminSeed:Email / AdminSeed:Password não configurados. Seed do Admin ignorado. Configure via 'dotnet user-secrets' (dev) ou variáveis de ambiente (prod).");
         }
         else
         {
-            // Se o usuário já existir, apenas garante que ele possui a role Admin
-            if (!userManager.IsInRoleAsync(user, roleName).GetAwaiter().GetResult())
+            var user = userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult();
+            if (user == null)
             {
-                userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
+                user = new IdentityUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    EmailConfirmed = true
+                };
+
+                // Cria o usuário de forma síncrona com a senha padrão
+                var createResult = userManager.CreateAsync(user, adminPassword).GetAwaiter().GetResult();
+                if (createResult.Succeeded)
+                {
+                    userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
+                }
+            }
+            else
+            {
+                // Se o usuário já existir, apenas garante que ele possui a role Admin
+                if (!userManager.IsInRoleAsync(user, roleName).GetAwaiter().GetResult())
+                {
+                    userManager.AddToRoleAsync(user, roleName).GetAwaiter().GetResult();
+                }
             }
         }
     }

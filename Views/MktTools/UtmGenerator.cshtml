@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Gerador de UTM";
+}
+
+<div class="space-y-6 font-mono">
+    
+    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl flex items-center justify-between">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-yellow-500 mb-1">
+                <i class="fa-solid fa-bullhorn"></i>
+                <span>MKT_TOOLS // UTM_GENERATOR</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-wider">GERADOR DE RASTREADORES UTM</h1>
+        </div>
+        <div class="hidden md:flex items-center space-x-2 text-xs bg-black px-3 py-1.5 rounded border border-terminal-border text-yellow-500">
+            <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+            <span>TRACKING ENGINE READY</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Formulário de Parâmetros -->
+        <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+            <h2 class="text-xs text-gray-400 uppercase tracking-widest border-b border-terminal-border pb-2">// 1. CONFIGURAÇÃO DOS PARÂMETROS</h2>
+
+            <div class="space-y-1">
+                <label class="block text-xs text-gray-400">URL de Destino (Landing Page)*</label>
+                <input type="url" id="baseUrl" oninput="generateUtm()" placeholder="https://seudominio.com/produto" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-yellow-500 focus:outline-none focus:border-yellow-500 font-mono" required />
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs text-gray-400">Origem da Campanha (utm_source)*</label>
+                <input type="text" id="utmSource" oninput="generateUtm()" placeholder="ex: facebook, google, newsletter, telegram" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-gray-300 focus:outline-none focus:border-yellow-500 font-mono" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs text-gray-400">Meio da Campanha (utm_medium)*</label>
+                <input type="text" id="utmMedium" oninput="generateUtm()" placeholder="ex: cpc, banner, email, social" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-gray-300 focus:outline-none focus:border-yellow-500 font-mono" />
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs text-gray-400">Nome da Campanha (utm_campaign)*</label>
+                <input type="text" id="utmCampaign" oninput="generateUtm()" placeholder="ex: black_friday_2026, lancamento_produto" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-gray-300 focus:outline-none focus:border-yellow-500 font-mono" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-xs text-gray-400">Termo (utm_term - Opcional)</label>
+                    <input type="text" id="utmTerm" oninput="generateUtm()" placeholder="palavra-chave" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-gray-300 focus:outline-none focus:border-yellow-500 font-mono" />
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs text-gray-400">Conteúdo (utm_content - Opcional)</label>
+                    <input type="text" id="utmContent" oninput="generateUtm()" placeholder="botao_verde" class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-gray-300 focus:outline-none focus:border-yellow-500 font-mono" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado Gerado -->
+        <div class="space-y-6">
+            <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+                <h2 class="text-xs text-gray-400 uppercase tracking-widest border-b border-terminal-border pb-2">// 2. LINK DE RASTREIO FINAL</h2>
+                
+                <div class="space-y-2">
+                    <div class="bg-black border border-terminal-border rounded p-4 text-xs text-terminal-green font-mono break-all min-h-[90px] flex items-center" id="finalResult">
+                        Preencha os campos ao lado para gerar a URL rastreável...
+                    </div>
+                </div>
+
+                <button onclick="copyUtmLink()" class="w-full bg-yellow-500 text-black font-bold p-3 rounded text-xs hover:bg-yellow-400 transition-all uppercase tracking-wider flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copiar Link Rastreado</span>
+                </button>
+            </div>
+
+            <div class="bg-terminal-panel border border-terminal-border rounded-lg p-4 text-xs text-gray-500 space-y-2">
+                <div class="text-yellow-500 font-bold">// DICA DE OPERAÇÃO</div>
+                <p>Use estes parâmetros padronizados para garantir que o Google Analytics e suas ferramentas de tráfego identifiquem com precisão a conversão de cada campanha.</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        function generateUtm() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const source = document.getElementById('utmSource').value.trim();
+            const medium = document.getElementById('utmMedium').value.trim();
+            const campaign = document.getElementById('utmCampaign').value.trim();
+            const term = document.getElementById('utmTerm').value.trim();
+            const content = document.getElementById('utmContent').value.trim();
+
+            const resultContainer = document.getElementById('finalResult');
+
+            if (!baseUrl) {
+                resultContainer.textContent = "Preencha a URL de destino para iniciar...";
+                return;
+            }
+
+            let url;
+            try {
+                url = new URL(baseUrl);
+            } catch (e) {
+                resultContainer.textContent = "[ERRO]: URL base inválida.";
+                return;
+            }
+
+            if (source) url.searchParams.set('utm_source', source);
+            if (medium) url.searchParams.set('utm_medium', medium);
+            if (campaign) url.searchParams.set('utm_campaign', campaign);
+            if (term) url.searchParams.set('utm_term', term);
+            if (content) url.searchParams.set('utm_content', content);
+
+            resultContainer.textContent = url.toString();
+        }
+
+        function copyUtmLink() {
+            const text = document.getElementById('finalResult').textContent;
+            if (text && !text.startsWith("Preencha") && !text.startsWith("[ERRO]")) {
+                navigator.clipboard.writeText(text);
+                alert("Link UTM copiado para a área de transferência!");
+            }
+        }
+    </script>
+}
