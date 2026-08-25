@@ -84,23 +84,111 @@
     </div>
 
 </div> *@
-        // Rota: /DevTools/DownloadAgent
-        // Protegida pelo [Authorize] da classe — só usuário logado baixa.
-        [HttpGet]
-        public IActionResult DownloadAgent()
-        {
-            // O arquivo fica FORA de wwwroot, numa pasta privada, pra garantir
-            // que ninguém baixe direto por URL estática sem passar pelo [Authorize].
-            var filePath = Path.Combine(_env.ContentRootPath, "PrivateFiles", "RubinotTunnelAgent.exe");
+@{
+    ViewData["Title"] = "Tunelador TCP";
+    var activeTunnels = ViewBag.ActiveTunnels as List<string> ?? new List<string>();
+}
 
-            if (!System.IO.File.Exists(filePath))
+<div class="space-y-6 font-mono">
+    
+    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl flex items-center justify-between">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-terminal-green mb-1">
+                <i class="fa-solid fa-satellite-dish"></i>
+                <span>DEV_TOOLS // TCP_TUNNEL_ENGINE</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-wider">TUNELADOR TCP / PROXY DE CAMADA 4</h1>
+        </div>
+        <div class="hidden md:flex items-center space-x-2 text-xs bg-black px-3 py-1.5 rounded border border-terminal-border text-terminal-green">
+            <span class="w-2 h-2 rounded-full bg-terminal-green animate-pulse"></span>
+            <span>SOCKET ENGINE ACTIVE</span>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-black border border-red-500 rounded p-4 text-xs text-red-400">[ERRO] > @TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-black border border-terminal-green rounded p-4 text-xs text-terminal-green">[SUCESSO] > @TempData["Success"]</div>
+    }
+
+    <!-- Download do Agente Desktop -->
+    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-start space-x-3">
+            <div class="text-terminal-green text-2xl mt-0.5">
+                <i class="fa-solid fa-download"></i>
+            </div>
+            <div>
+                <h2 class="text-xs text-gray-400 uppercase tracking-widest mb-1">// AGENTE DESKTOP (WINDOWS)</h2>
+                <p class="text-sm text-white font-bold">Rubinot Tunnel Agent</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    Aplicativo para os usuários rodarem o túnel localmente, sem precisar de linha de comando.
+                    Requer login para baixar.
+                </p>
+            </div>
+        </div>
+        <a asp-action="DownloadAgent"
+           class="whitespace-nowrap bg-terminal-green text-black px-6 py-3 rounded font-bold text-xs hover:bg-emerald-400 transition-all uppercase tracking-wider flex items-center space-x-2">
+            <i class="fa-solid fa-download"></i>
+            <span>Baixar Agente (.exe)</span>
+        </a>
+    </div>
+
+    <!-- Formulário para Iniciar Novo Túnel -->
+    <form asp-action="StartTunnel" method="post" class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+        <h2 class="text-xs text-gray-400 uppercase tracking-widest">// CONFIGURAR NOVO TÚNEL (EX: RUBINOT)</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">PORTA LOCAL (LISTEN)</label>
+                <input type="number" name="localPort" required class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-terminal-green focus:outline-none focus:border-terminal-green" placeholder="Ex: 7171">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">HOST DE DESTINO (TARGET IP)</label>
+                <input type="text" name="targetHost" required class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-terminal-green focus:outline-none focus:border-terminal-green" placeholder="Ex: game.rubinot.com">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">PORTA DE DESTINO</label>
+                <input type="number" name="targetPort" required class="w-full bg-black border border-terminal-border rounded p-2.5 text-xs text-terminal-green focus:outline-none focus:border-terminal-green" placeholder="Ex: 7171">
+            </div>
+        </div>
+
+        <button type="submit" class="w-full bg-terminal-green text-black py-3 rounded font-bold text-xs hover:bg-emerald-400 transition-all uppercase tracking-wider">
+            > INICIAR TÚNEL TCP
+        </button>
+    </form>
+
+    <!-- Lista de Túneis Ativos -->
+    <div class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+        <h2 class="text-xs text-gray-400 uppercase tracking-widest">// TÚNEIS ATIVOS EM MEMÓRIA</h2>
+        
+        <div class="space-y-2">
+            @if (activeTunnels.Any())
             {
-                TempData["Error"] = "Agente ainda não disponível para download. Contate o administrador.";
-                return RedirectToAction(nameof(TuneladorTcp));
+                @foreach (var tunnel in activeTunnels)
+                {
+                    var portStr = tunnel.Split(':')[1].Split(' ')[0];
+                    <div class="flex items-center justify-between bg-black border border-terminal-border p-3 rounded text-xs">
+                        <div class="flex items-center space-x-2 text-terminal-green">
+                            <i class="fa-solid fa-network-wired animate-pulse"></i>
+                            <span class="font-bold">@tunnel</span>
+                        </div>
+                        <form asp-action="StopTunnel" method="post" class="inline">
+                            <input type="hidden" name="localPort" value="@portStr" />
+                            <button type="submit" class="bg-red-950 text-red-400 border border-red-800 px-3 py-1 rounded hover:bg-red-900 transition-all font-bold">
+                                PARAR TÚNEL
+                            </button>
+                        </form>
+                    </div>
+                }
             }
+            else
+            {
+                <div class="text-center py-6 text-gray-600 text-xs">Nenhum túnel TCP ativo no momento.</div>
+            }
+        </div>
+    </div>
 
-            var fileName = "RubinotTunnelAgent.exe";
-            var contentType = "application/octet-stream";
-
-            return PhysicalFile(filePath, contentType, fileName);
-        }
+</div>
