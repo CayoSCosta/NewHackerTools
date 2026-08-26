@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Proxy Reverso";
+}
+
+<div class="space-y-6">
+    <div class="border-b border-gray-200 dark:border-terminal-border pb-4 flex justify-between items-end">
+        <div>
+            <div class="text-xs text-terminal-green mb-1">// MODULE: REVERSE_PROXY_CORE</div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">Configuração de Proxy Reverso</h1>
+        </div>
+        <span class="text-xs bg-yellow-950 text-yellow-400 border border-yellow-800 px-2.5 py-1 rounded">Modo Standby (Inativo)</span>
+    </div>
+
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 shadow-xl relative overflow-hidden transition-colors duration-200">
+        <div class="absolute top-0 right-0 p-4 text-terminal-border opacity-20 text-6xl pointer-events-none">
+            <i class="fa-solid fa-network-wired"></i>
+        </div>
+
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center space-x-2">
+            <i class="fa-solid fa-triangle-exclamation text-yellow-500"></i>
+            <span>Módulo Aguardando Implementação de Roteamento</span>
+        </h2>
+        <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-6">
+            Esta interface servirá para mapear rotas de entrada (ingress) e redirecioná-las para servidores de destino internos de forma mascarada. Como solicitado, a lógica de manipulação de sockets e redirecionamento de pacotes está desacoplada e inativa no momento.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border p-4 rounded transition-colors duration-200">
+                <label class="block text-xs text-gray-700 dark:text-gray-400 mb-1">HOST DE ORIGEM (LISTEN)</label>
+                <input type="text" disabled value="http://localhost:8080" class="w-full bg-gray-100 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded px-3 py-2 text-sm text-gray-700 dark:text-gray-400 cursor-not-allowed transition-colors duration-200" />
+            </div>
+            <div class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border p-4 rounded transition-colors duration-200">
+                <label class="block text-xs text-gray-700 dark:text-gray-400 mb-1">DESTINO DO REPASSE (TARGET)</label>
+                <input type="text" disabled value="http://10.0.0.45:5000" class="w-full bg-gray-100 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded px-3 py-2 text-sm text-gray-700 dark:text-gray-400 cursor-not-allowed transition-colors duration-200" />
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <button disabled class="bg-gray-100 dark:bg-terminal-muted text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-terminal-border px-4 py-2 rounded text-sm cursor-not-allowed flex items-center space-x-2 transition-colors duration-200">
+                <i class="fa-solid fa-power-off"></i>
+                <span>Ativar Rota (Em Breve)</span>
+            </button>
+        </div>
+    </div>
+</div>

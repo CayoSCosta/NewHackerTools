@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Hashes & Criptografia";
+}
+
+<div class="space-y-6 font-mono">
+    
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 shadow-2xl flex items-center justify-between transition-colors duration-200">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-terminal-green mb-1">
+                <i class="fa-solid fa-code"></i>
+                <span>DEV_TOOLS // CRYPTO_INSPECTOR</span>
+            </div>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-wider">HASH GENERATOR & ENCODER</h1>
+        </div>
+        <div class="hidden md:flex items-center space-x-2 text-xs bg-gray-50 dark:bg-terminal-dark px-3 py-1.5 rounded border border-gray-200 dark:border-terminal-border text-terminal-green transition-colors duration-200">
+            <span class="w-2 h-2 rounded-full bg-terminal-green animate-pulse"></span>
+            <span>SECURE_ALGOS ACTIVE</span>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-5 space-y-4 transition-colors duration-200">
+        <div class="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300">
+            <span>// TEXTO_DE_ENTRADA (PLAINTEXT)</span>
+            <button onclick="clearInput()" class="text-red-400 hover:text-red-300">Limpar</button>
+        </div>
+        <textarea id="hashInput" rows="4" oninput="calculateHashes()" class="w-full bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-terminal-green focus:outline-none focus:border-terminal-green resize-none font-mono transition-colors duration-200"></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+        
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 space-y-2 transition-colors duration-200">
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-terminal-green font-bold">// BASE64 (ENCODE)</span>
+                <button onclick="copyToClipboard('base64Output')" class="text-gray-700 dark:text-gray-300 hover:text-terminal-green text-[10px]">Copiar</button>
+            </div>
+            <div id="base64Output" class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-gray-700 dark:text-gray-300 font-mono break-all select-all min-h-[40px] transition-colors duration-200">---</div>
+        </div>
+
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 space-y-2 transition-colors duration-200">
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-yellow-500 font-bold">// MD5 (128-bit - Legado / Não Seguro)</span>
+                <button onclick="copyToClipboard('md5Output')" class="text-gray-700 dark:text-gray-300 hover:text-terminal-green text-[10px]">Copiar</button>
+            </div>
+            <div id="md5Output" class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-gray-700 dark:text-gray-300 font-mono break-all select-all min-h-[40px] transition-colors duration-200">---</div>
+        </div>
+
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 space-y-2 transition-colors duration-200">
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-terminal-green font-bold">// SHA-256 (256-bit - Padrão de Mercado)</span>
+                <button onclick="copyToClipboard('sha256Output')" class="text-gray-700 dark:text-gray-300 hover:text-terminal-green text-[10px]">Copiar</button>
+            </div>
+            <div id="sha256Output" class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-terminal-green font-mono break-all select-all min-h-[40px] transition-colors duration-200">---</div>
+        </div>
+
+        <div class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-4 space-y-2 transition-colors duration-200">
+            <div class="flex justify-between items-center text-xs">
+                <span class="text-terminal-green font-bold">// SHA-512 (512-bit - Alta Segurança)</span>
+                <button onclick="copyToClipboard('sha512Output')" class="text-gray-700 dark:text-gray-300 hover:text-terminal-green text-[10px]">Copiar</button>
+            </div>
+            <div id="sha512Output" class="bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-gray-700 dark:text-gray-300 font-mono break-all select-all min-h-[40px] transition-colors duration-200">---</div>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        let timeout = null;
+
+        function calculateHashes() {
+            clearTimeout(timeout);
+            const input = document.getElementById('hashInput').value;
+
+            if (!input) {
+                document.getElementById('base64Output').textContent = "---";
+                document.getElementById('md5Output').textContent = "---";
+                document.getElementById('sha256Output').textContent = "---";
+                document.getElementById('sha512Output').textContent = "---";
+                return;
+            }
+
+            // Delay leve (debounce) para otimizar requisições enquanto o usuário digita
+            timeout = setTimeout(async () => {
+                try {
+                    const response = await fetch('/DevTools/ProcessHashes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input: input })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        document.getElementById('base64Output').textContent = data.base64;
+                        document.getElementById('md5Output').textContent = data.md5;
+                        document.getElementById('sha256Output').textContent = data.sha256;
+                        document.getElementById('sha512Output').textContent = data.sha512;
+                    }
+                } catch (err) {
+                    console.error("Erro ao calcular hashes.");
+                }
+            }, 200);
+        }
+
+        function clearInput() {
+            document.getElementById('hashInput').value = '';
+            calculateHashes();
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            if (text && text !== "---") {
+                navigator.clipboard.writeText(text);
+                alert("Hash copiado para a área de transferência!");
+            }
+        }
+    </script>
+}
