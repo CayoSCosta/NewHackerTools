@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="HackerToolbox.csproj" />
+  <Project Path="RubinotTunnelAgent/RubinotTunnelAgent/RubinotTunnelAgent.csproj" />
+</Solution>
