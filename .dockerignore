@@ -1,0 +1,33 @@
+# Controle de versão e IDE
+**/.git
+**/.gitignore
+**/.github
+**/.vs
+**/.vscode
+**/*.user
+**/*.suo
+
+# Artefatos de build
+**/bin
+**/obj
+
+# Dados e segredos locais: nunca entram na imagem
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite*
+**/.env
+**/.env.*
+!**/.env.example
+**/secrets.json
+**/appsettings.*.local.json
+
+# Projetos e arquivos fora do escopo da imagem web
+Agent
+*.md
+Dockerfile
+compose*.yaml
+docs
+
+secrets
+backups

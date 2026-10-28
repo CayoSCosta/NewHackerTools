@@ -482,3 +482,9 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Secrets e backups locais (nunca versionar)
+/secrets/*
+!/secrets/*.example
+!/secrets/README.md
+/backups/

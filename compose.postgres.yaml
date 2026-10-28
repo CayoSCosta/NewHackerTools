@@ -1,0 +1,96 @@
+# Overlay PostgreSQL. Uso: docker compose -f compose.yaml -f compose.postgres.yaml <comando>
+# O compose.yaml sozinho continua usando SQLite.
+# Senhas NÃO ficam em variáveis de ambiente: são Docker/Compose secrets baseados em arquivo (veja secrets/README.md),
+# montados em /run/secrets/<nome> e invisíveis em "docker inspect".
+# O PostgreSQL NÃO publica porta no host: só web e migrate o acessam, pela rede interna "hbx".
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${HBX_PG_DB:-hackerbox}
+      POSTGRES_USER: ${HBX_PG_USER:-hbx}
+      POSTGRES_PASSWORD_FILE: /run/secrets/hbx_pg_password
+    secrets:
+      - hbx_pg_password
+    volumes:
+      - hbx-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - hbx
+
+  web:
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      Database__Provider: Postgres
+      # A connection string é montada pelo Npgsql a partir dos componentes (escaping correto de ';', espaços etc.)
+      Database__Postgres__Host: db
+      Database__Postgres__Port: "5432"
+      Database__Postgres__Database: ${HBX_PG_DB:-hackerbox}
+      Database__Postgres__Username: ${HBX_PG_USER:-hbx}
+      Database__Postgres__PasswordFile: /run/secrets/hbx_pg_password
+      AdminSeed__Password: !reset null
+      AdminSeed__PasswordFile: /run/secrets/admin_seed_password
+    secrets:
+      - hbx_pg_password
+      - admin_seed_password
+
+  # Aplica as migrations PostgreSQL de forma explícita e única. Nunca roda no "up" normal.
+  # Uso: docker compose -f compose.yaml -f compose.postgres.yaml --profile tools run --rm migrate
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    image: hackertools-migrate:local
+    depends_on:
+      db:
+        condition: service_healthy
+    user: "1654:1654"
+    # read_only não é viável: o dotnet-ef grava artefatos do MSBuild em /src/**/bin
+    tmpfs:
+      - /tmp
+    environment:
+      HOME: /tmp
+      DOTNET_CLI_HOME: /tmp
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      HBX_PG_HOST: db
+      HBX_PG_PORT: "5432"
+      HBX_PG_DATABASE: ${HBX_PG_DB:-hackerbox}
+      HBX_PG_USERNAME: ${HBX_PG_USER:-hbx}
+      HBX_PG_PASSWORD_FILE: /run/secrets/hbx_pg_password
+    secrets:
+      - hbx_pg_password
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - hbx
+
+secrets:
+  # Arquivos locais NÃO versionados. Diretório configurável por HBX_SECRETS_DIR (padrão ./secrets).
+  hbx_pg_password:
+    file: ${HBX_SECRETS_DIR:-./secrets}/hbx_pg_password.txt
+  admin_seed_password:
+    file: ${HBX_SECRETS_DIR:-./secrets}/admin_seed_password.txt
+
+volumes:
+  hbx-pgdata:

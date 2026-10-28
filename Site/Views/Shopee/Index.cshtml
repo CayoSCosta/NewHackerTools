@@ -1,0 +1,144 @@
+@model HackerToolbox.Models.ShopeeDashboardViewModel
+@{
+    ViewData["Title"] = "Shopee";
+}
+
+<div class="space-y-6 font-mono">
+    <section class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-terminal-green mb-1">
+                <i class="fa-solid fa-store"></i>
+                <span>COMMERCE // SHOPEE</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-wider">PAINEL DA LOJA</h1>
+            <p class="text-xs text-gray-500 mt-2">Consultas somente leitura à Shopee Open Platform.</p>
+        </div>
+        <div class="text-xs px-3 py-1.5 rounded border @(Model.IsConfigured ? "text-terminal-green border-terminal-green/40 bg-black" : "text-yellow-500 border-yellow-500/40 bg-black")">
+            <i class="fa-solid @(Model.IsConfigured ? "fa-link" : "fa-link-slash") mr-1"></i>
+            @(Model.IsConfigured ? "CONFIGURADO" : "AGUARDANDO CONFIGURAÇÃO")
+        </div>
+    </section>
+
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-3" aria-label="Módulos da loja">
+        <div class="bg-terminal-panel border border-terminal-green/40 rounded-lg p-4">
+            <div class="text-terminal-green text-xs"><i class="fa-solid fa-box mr-2"></i>PRODUTOS</div>
+            <div class="text-[10px] text-gray-500 mt-2">Consulta disponível</div>
+        </div>
+        @foreach (var module in new[] { "PEDIDOS", "ESTOQUE", "PREÇOS", "INDICADORES" })
+        {
+            <div class="bg-terminal-panel border border-terminal-border rounded-lg p-4 opacity-60">
+                <div class="text-gray-400 text-xs"><i class="fa-solid fa-lock mr-2"></i>@module</div>
+                <div class="text-[10px] text-gray-600 mt-2">Em breve</div>
+            </div>
+        }
+    </section>
+
+    @if (!Model.IsConfigured)
+    {
+        <section class="bg-terminal-panel border border-yellow-500/30 rounded-lg p-6 space-y-3">
+            <h2 class="text-sm text-yellow-500 font-bold"><i class="fa-solid fa-key mr-2"></i>CONFIGURAÇÃO NECESSÁRIA</h2>
+            <p class="text-xs text-gray-400">
+                Configure os dados da aplicação e da loja como secrets do .NET em desenvolvimento ou variáveis de ambiente em produção.
+                Nenhum valor de credencial é exibido nesta página.
+            </p>
+            <pre class="bg-black border border-terminal-border rounded p-4 text-xs text-gray-300 overflow-x-auto">Shopee__PartnerId
+Shopee__PartnerKey
+Shopee__ShopId
+Shopee__AccessToken</pre>
+            <p class="text-xs text-gray-500">
+                O token de acesso deve vir da autorização da loja na Shopee Open Platform. A documentação consultada informa validade de quatro horas para o access token; a renovação não é automatizada nesta primeira entrega.
+            </p>
+        </section>
+    }
+    else if (Model.ErrorMessage != null)
+    {
+        <section class="bg-terminal-panel border border-red-500/40 rounded-lg p-6" role="alert">
+            <h2 class="text-sm text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i>CONSULTA INDISPONÍVEL</h2>
+            <p class="text-xs text-gray-400 mt-2">@Model.ErrorMessage</p>
+            <a asp-controller="Shopee" asp-action="Index" asp-route-offset="@Model.Offset"
+               class="inline-flex mt-4 px-4 py-2 bg-terminal-muted text-gray-200 rounded text-xs hover:text-terminal-green">
+                <i class="fa-solid fa-rotate-right mr-2"></i>Tentar novamente
+            </a>
+        </section>
+    }
+    else if (Model.ProductPage is { } productPage)
+    {
+        <section class="bg-terminal-panel border border-terminal-border rounded-lg shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-terminal-border">
+                <div>
+                    <h2 class="text-sm text-white font-bold">PRODUTOS ATIVOS</h2>
+                    <p class="text-[11px] text-gray-500 mt-1">
+                        @productPage.TotalCount item(ns) NORMAL · exibindo @productPage.Products.Count nesta página
+                    </p>
+                </div>
+                <a asp-controller="Shopee" asp-action="Index" asp-route-offset="@Model.Offset"
+                   class="px-3 py-2 bg-black border border-terminal-border rounded text-xs text-terminal-green hover:border-terminal-green">
+                    <i class="fa-solid fa-rotate-right mr-2"></i>Atualizar
+                </a>
+            </div>
+
+            @if (productPage.Products.Count == 0)
+            {
+                <p class="p-6 text-xs text-gray-500">Nenhum produto ativo encontrado nesta página.</p>
+            }
+            else
+            {
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-[10px] text-gray-500 uppercase bg-black/50">
+                            <tr>
+                                <th class="px-5 py-3">Produto</th>
+                                <th class="px-5 py-3">SKU</th>
+                                <th class="px-5 py-3 text-right">Preço</th>
+                                <th class="px-5 py-3 text-right">Disponível</th>
+                                <th class="px-5 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-terminal-border">
+                            @foreach (var product in productPage.Products)
+                            {
+                                <tr class="hover:bg-black/30">
+                                    <td class="px-5 py-4">
+                                        <div class="text-gray-200">@product.Name</div>
+                                        <div class="text-[10px] text-gray-600 mt-1">ID @product.ItemId</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-gray-400">@(string.IsNullOrWhiteSpace(product.Sku) ? "—" : product.Sku)</td>
+                                    <td class="px-5 py-4 text-right text-gray-300">
+                                        @(product.Price.HasValue ? $"{product.Currency} {product.Price.Value:N2}" : "—")
+                                    </td>
+                                    <td class="px-5 py-4 text-right text-gray-300">@(product.AvailableStock?.ToString() ?? "—")</td>
+                                    <td class="px-5 py-4"><span class="text-terminal-green">@product.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (Model.Offset > 0 || productPage.HasNextPage)
+            {
+                <nav class="flex justify-between p-5 border-t border-terminal-border" aria-label="Paginação dos produtos">
+                    @if (Model.Offset > 0)
+                    {
+                        <a asp-controller="Shopee" asp-action="Index" asp-route-offset="@Math.Max(0, Model.Offset - 50)"
+                           class="px-3 py-2 bg-black border border-terminal-border rounded text-xs text-gray-300 hover:text-terminal-green">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>Anterior
+                        </a>
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    @if (productPage.HasNextPage)
+                    {
+                        <a asp-controller="Shopee" asp-action="Index" asp-route-offset="@productPage.NextOffset"
+                           class="px-3 py-2 bg-black border border-terminal-border rounded text-xs text-gray-300 hover:text-terminal-green">
+                            Próxima<i class="fa-solid fa-arrow-right ml-2"></i>
+                        </a>
+                    }
+                </nav>
+            }
+        </section>
+        <p class="text-[10px] text-gray-600">Os valores exibidos são retornados pela API da Shopee e não podem ser alterados neste painel.</p>
+    }
+</div>

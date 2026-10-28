@@ -25,26 +25,267 @@
         </div>
     }
 
-    <form asp-action="ScrubMetadata" method="post" enctype="multipart/form-data" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 space-y-6 transition-colors duration-200">
+    <form id="scrubForm" method="post" class="bg-white dark:bg-terminal-panel border border-gray-200 dark:border-terminal-border rounded-lg p-6 space-y-6 transition-colors duration-200">
+        @Html.AntiForgeryToken()
         
         <div class="bg-gray-50 dark:bg-terminal-dark/50 border border-gray-200 dark:border-terminal-border rounded p-4 text-xs text-gray-700 dark:text-gray-300 space-y-2 transition-colors duration-200">
             <span class="text-yellow-500 font-bold">// O QUE ESTA FERRAMENTA REMOVE:</span>
             <ul class="list-disc pl-5 space-y-1 text-[11px]">
                 <li><strong class="text-gray-700 dark:text-gray-300">Imagens (JPG, PNG):</strong> Coordenadas GPS, modelo de dispositivos, data de captura e tags EXIF.</li>
-                <li><strong class="text-gray-700 dark:text-gray-300">Documentos (PDF):</strong> Autor, software criador, histórico de revisão e metadados ocultos.</li>
-                <li><strong class="text-gray-700 dark:text-gray-300">Pacote Office (DOCX, XLSX):</strong> Nome de usuário da rede corporativa, organização e comentários invisíveis.</li>
+                <li><strong class="text-gray-700 dark:text-gray-300">Vídeos (MP4, MOV, M4V, MKV, WEBM, AVI):</strong> GPS, dispositivo, data de gravação, encoder e capítulos (sem recodificar; requer ffmpeg no servidor; até 500 MB).</li>
+                <li><strong class="text-gray-700 dark:text-gray-300">Documentos (PDF):</strong> leitura/limpeza ainda não suportada — o arquivo é devolvido sem alterações.</li>
+                <li><strong class="text-gray-700 dark:text-gray-300">Pacote Office (DOCX, XLSX, PPTX):</strong> Nome de usuário da rede corporativa, organização, empresa e propriedades personalizadas.</li>
             </ul>
         </div>
 
         <div class="space-y-2">
-            <label class="block text-xs text-gray-700 dark:text-gray-300 uppercase tracking-wider">// SELECIONE O ARQUIVO PARA HIGIENIZAÇÃO</label>
-            <input type="file" name="scrubFile" required class="w-full bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-gray-700 dark:text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-all duration-200 cursor-pointer font-mono">
+            <label class="block text-xs text-gray-700 dark:text-gray-300 uppercase tracking-wider">// SELECIONE OS ARQUIVOS PARA HIGIENIZAÇÃO (ATÉ 50 POR LOTE, 500 MB CADA)</label>
+            <input id="scrubInput" type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx,.pptx,.mp4,.mov,.m4v,.mkv,.webm,.avi,video/*" class="w-full bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs text-gray-700 dark:text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 transition-all duration-200 cursor-pointer font-mono">
         </div>
 
-        <button type="submit" class="w-full bg-yellow-500 text-black py-3 rounded font-bold text-xs hover:bg-yellow-400 transition-all flex items-center justify-center space-x-2">
-            <i class="fa-solid fa-eraser"></i>
-            <span>EXPURGAR METADADOS E BAIXAR ARQUIVO LIMPO</span>
-        </button>
+        <div id="fileList" class="space-y-2"></div>
+
+        <div id="overall" class="hidden space-y-1">
+            <div class="flex justify-between text-[11px] text-gray-700 dark:text-gray-300">
+                <span id="overallLabel">PROGRESSO GERAL</span>
+                <span id="overallPct">0%</span>
+            </div>
+            <div class="w-full h-2 bg-gray-200 dark:bg-terminal-dark rounded overflow-hidden">
+                <div id="overallBar" class="h-2 bg-yellow-500 transition-all" style="width:0%"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3">
+            <button id="runBtn" type="submit" class="flex-1 bg-yellow-500 text-black py-3 rounded font-bold text-xs hover:bg-yellow-400 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-eraser"></i>
+                <span>EXPURGAR METADADOS</span>
+            </button>
+            <a id="zipBtn" href="#" class="hidden flex-1 border border-yellow-500 text-yellow-500 py-3 rounded font-bold text-xs hover:bg-yellow-500 hover:text-black transition-all items-center justify-center space-x-2">
+                <i class="fa-solid fa-file-zipper"></i>
+                <span>BAIXAR TUDO (ZIP)</span>
+            </a>
+        </div>
     </form>
 
 </div>
+
+@section Scripts {
+<script>
+(function () {
+    const MAX_FILES = 50, MAX_BYTES = 500 * 1024 * 1024;
+    const form = document.getElementById('scrubForm');
+    const input = document.getElementById('scrubInput');
+    const listEl = document.getElementById('fileList');
+    const runBtn = document.getElementById('runBtn');
+    const zipBtn = document.getElementById('zipBtn');
+    const overall = document.getElementById('overall');
+    const overallBar = document.getElementById('overallBar');
+    const overallPct = document.getElementById('overallPct');
+    const overallLabel = document.getElementById('overallLabel');
+    const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+    let items = [];   // { file, status, row, ... }
+    let running = false;
+    let batchId = newBatchId();
+
+    function newBatchId() {
+        const b = crypto.getRandomValues(new Uint8Array(16));
+        return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    }
+    function fmtSize(n) {
+        if (n < 1024) return n + ' B';
+        if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+        if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+        return (n / 1073741824).toFixed(2) + ' GB';
+    }
+    function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+    }
+
+    input.addEventListener('change', () => {
+        if (running) return;
+        const known = new Set(items.map(i => i.file.name + '|' + i.file.size));
+        for (const f of input.files) {
+            if (items.length >= MAX_FILES) { alert('Máximo de ' + MAX_FILES + ' arquivos por lote.'); break; }
+            if (f.size > MAX_BYTES) { alert(f.name + ': excede 500 MB.'); continue; }
+            if (f.size === 0 || known.has(f.name + '|' + f.size)) continue;
+            items.push(createItem(f));
+        }
+        input.value = '';
+        resetResults();
+        render();
+    });
+
+    function resetResults() {
+        // Novos arquivos após processar => novo lote
+        if (items.some(i => i.status === 'done' || i.status === 'error')) {
+            batchId = newBatchId();
+            items.forEach(i => { i.status = 'pending'; i.result = null; i.error = null; i.pct = 0; });
+            zipBtn.classList.add('hidden'); zipBtn.classList.remove('flex');
+            overall.classList.add('hidden');
+        }
+    }
+
+    function createItem(file) {
+        return { file, status: 'pending', pct: 0, result: null, error: null, open: false };
+    }
+
+    function render() {
+        listEl.replaceChildren();
+        if (items.length === 0) return;
+        listEl.appendChild(el('div', 'text-[11px] text-yellow-500', '// ARQUIVOS SELECIONADOS (' + items.length + ')'));
+        items.forEach((it, idx) => listEl.appendChild(renderRow(it, idx)));
+    }
+
+    const STATUS = {
+        pending: ['PENDENTE', 'text-gray-500'],
+        uploading: ['ENVIANDO', 'text-blue-400'],
+        processing: ['PROCESSANDO', 'text-yellow-500'],
+        done: ['LIMPO', 'text-terminal-green'],
+        error: ['ERRO', 'text-red-500']
+    };
+
+    function renderRow(it, idx) {
+        const row = el('div', 'bg-gray-50 dark:bg-terminal-dark border border-gray-200 dark:border-terminal-border rounded p-3 text-xs space-y-2');
+        const top = el('div', 'flex items-center justify-between gap-3');
+        const left = el('div', 'min-w-0 flex-1');
+        left.appendChild(el('div', 'truncate text-gray-900 dark:text-white', it.file.name));
+        left.appendChild(el('div', 'text-[10px] text-gray-500', fmtSize(it.file.size)));
+        top.appendChild(left);
+
+        const [label, color] = STATUS[it.status];
+        top.appendChild(el('span', 'font-bold text-[10px] ' + color, label));
+
+        const actions = el('div', 'flex items-center gap-2');
+        if (it.status === 'done') {
+            const view = el('button', 'text-[10px] border border-yellow-500 text-yellow-500 px-2 py-1 rounded hover:bg-yellow-500 hover:text-black', it.open ? 'OCULTAR' : 'ANTES/DEPOIS');
+            view.type = 'button';
+            view.onclick = () => { it.open = !it.open; render(); };
+            actions.appendChild(view);
+            const dl = el('a', 'text-[10px] bg-yellow-500 text-black px-2 py-1 rounded font-bold hover:bg-yellow-400', 'BAIXAR');
+            dl.href = '/MktTools/DownloadScrubbed?batchId=' + batchId + '&fileId=' + it.result.fileId;
+            actions.appendChild(dl);
+        }
+        if (!running) {
+            const rm = el('button', 'text-red-500 hover:text-red-400 px-1', '✕');
+            rm.type = 'button'; rm.title = 'Remover';
+            rm.onclick = () => { items.splice(idx, 1); render(); };
+            actions.appendChild(rm);
+        }
+        top.appendChild(actions);
+        row.appendChild(top);
+
+        if (it.status === 'uploading' || it.status === 'processing') {
+            const bar = el('div', 'w-full h-1.5 bg-gray-200 dark:bg-terminal-panel rounded overflow-hidden');
+            const fill = el('div', 'h-1.5 bg-yellow-500 transition-all' + (it.status === 'processing' ? ' animate-pulse' : ''));
+            fill.style.width = it.pct + '%';
+            bar.appendChild(fill);
+            row.appendChild(bar);
+        }
+        if (it.status === 'error') row.appendChild(el('div', 'text-[11px] text-red-400', it.error));
+        if (it.status === 'done' && it.open) row.appendChild(renderDiff(it.result));
+        return row;
+    }
+
+    function renderDiff(r) {
+        const wrap = el('div', 'space-y-2');
+        if (!r.supported)
+            wrap.appendChild(el('div', 'text-[11px] text-red-400', 'Limpeza não suportada para este formato: o arquivo foi devolvido sem alterações.'));
+        wrap.appendChild(el('div', 'text-[10px] text-gray-500', 'Tamanho: ' + fmtSize(r.sizeBefore) + ' → ' + fmtSize(r.sizeAfter)));
+
+        const keys = Array.from(new Set([...Object.keys(r.before), ...Object.keys(r.after)])).sort();
+        if (keys.length === 0) {
+            wrap.appendChild(el('div', 'text-[11px] text-gray-500', 'Nenhum metadado legível encontrado neste arquivo.'));
+            return wrap;
+        }
+        const grid = el('div', 'grid grid-cols-[1fr_1fr_1fr] gap-x-3 gap-y-1 text-[11px] break-all');
+        ['CAMPO', 'ANTES', 'DEPOIS'].forEach(h => grid.appendChild(el('div', 'font-bold text-yellow-500', h)));
+        for (const k of keys) {
+            const b = r.before[k], a = r.after[k];
+            grid.appendChild(el('div', 'text-gray-500', k));
+            grid.appendChild(el('div', b === undefined ? 'text-gray-600' : (a === undefined ? 'text-red-400 line-through' : 'text-gray-700 dark:text-gray-300'), b === undefined ? '—' : b));
+            grid.appendChild(el('div', a === undefined ? 'text-terminal-green' : 'text-yellow-500', a === undefined ? '(removido)' : a));
+        }
+        wrap.appendChild(grid);
+        return wrap;
+    }
+
+    function upload(it, onProgress) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const fd = new FormData();
+            fd.append('file', it.file);
+            fd.append('batchId', batchId);
+            xhr.open('POST', '/MktTools/ScrubFile');
+            xhr.setRequestHeader('RequestVerificationToken', token);
+            xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+            xhr.upload.onload = () => onProgress(1, true);
+            xhr.onload = () => {
+                let body = null;
+                try { body = JSON.parse(xhr.responseText); } catch { }
+                if (xhr.status >= 200 && xhr.status < 300 && body) resolve(body);
+                else reject(new Error((body && body.error) || ('HTTP ' + xhr.status)));
+            };
+            xhr.onerror = () => reject(new Error('Falha de rede.'));
+            xhr.send(fd);
+        });
+    }
+
+    function setOverall(done, current) {
+        const pct = Math.round(((done + current) / items.length) * 100);
+        overallBar.style.width = pct + '%';
+        overallPct.textContent = pct + '%';
+        overallLabel.textContent = 'PROGRESSO GERAL (' + Math.min(done + 1, items.length) + '/' + items.length + ')';
+    }
+
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+        if (running) return;
+        if (items.length === 0) { alert('Selecione ao menos um arquivo.'); return; }
+
+        const todo = items.filter(i => i.status !== 'done');
+        if (todo.length === 0) return;
+
+        running = true;
+        runBtn.disabled = true;
+        input.disabled = true;
+        overall.classList.remove('hidden');
+        let done = items.length - todo.length;
+        setOverall(done, 0);
+        render();
+
+        for (const it of todo) {
+            it.status = 'uploading'; it.pct = 0; it.error = null;
+            render();
+            try {
+                it.result = await upload(it, (frac, finished) => {
+                    it.pct = Math.round(frac * 100);
+                    if (finished) { it.status = 'processing'; it.pct = 100; render(); }
+                    else { setOverall(done, frac * 0.7); render(); }
+                });
+                it.status = 'done';
+            } catch (err) {
+                it.status = 'error';
+                it.error = err.message;
+            }
+            done++;
+            setOverall(done, 0);
+            render();
+        }
+
+        running = false;
+        runBtn.disabled = false;
+        input.disabled = false;
+        overallLabel.textContent = 'CONCLUÍDO';
+        if (items.some(i => i.status === 'done')) {
+            zipBtn.href = '/MktTools/DownloadBatchZip?batchId=' + batchId;
+            zipBtn.classList.remove('hidden'); zipBtn.classList.add('flex');
+        }
+        render();
+    });
+})();
+</script>
+}

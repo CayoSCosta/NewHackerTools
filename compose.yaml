@@ -1,0 +1,62 @@
+# NewHackerTools - execução local com Docker Compose.
+# Uma única instância web (SQLite não suporta múltiplos processos escritores com segurança).
+# Valores sensíveis vêm do arquivo .env (não versionado); veja .env.example.
+
+name: hackertools
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hackertools-web:local
+    init: true
+    restart: unless-stopped
+    ports:
+      # Somente loopback do host. Um proxy HTTPS externo deve apontar para esta porta.
+      - "127.0.0.1:${HBX_HOST_PORT:-8080}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      # Caminhos persistentes (também definidos na imagem; explícitos aqui por clareza)
+      ConnectionStrings__DefaultConnection: "Data Source=/data/hackerbox.db"
+      DataProtection__KeysPath: /keys
+      # Seed do Admin: só é aplicado se o schema do banco já existir. Deixe vazio para desativar.
+      AdminSeed__Email: ${ADMIN_SEED_EMAIL:-}
+      AdminSeed__Password: ${ADMIN_SEED_PASSWORD:-}
+      # IPs/CIDRs do proxy HTTPS autorizado a enviar X-Forwarded-For/Proto (vazio = desativado)
+      ForwardedHeaders__TrustedProxies: ${HBX_TRUSTED_PROXIES:-}
+    volumes:
+      - hbx-data:/data
+      - hbx-keys:/keys
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 512
+    # Limites ajustáveis via .env. Uploads de até 500 MB e ffmpeg consomem memória/CPU.
+    mem_limit: ${HBX_MEM_LIMIT:-2g}
+    cpus: ${HBX_CPUS:-2}
+    networks:
+      - hbx
+
+volumes:
+  hbx-data:
+  hbx-keys:
+
+networks:
+  hbx:
+    ipam:
+      config:
+        # Sub-rede fixa para que o IP do gateway (proxy no host) seja previsível em HBX_TRUSTED_PROXIES
+        - subnet: 172.28.0.0/24

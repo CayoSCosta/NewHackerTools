@@ -66,7 +66,7 @@
                                     <a href="@shortLink" target="_blank" class="text-terminal-green hover:underline font-bold">@shortLink</a>
                                 </td>
                                 <td class="py-3 text-center text-yellow-500 font-bold">@item.ClickCount</td>
-                                <td class="py-3 text-right text-gray-700 dark:text-gray-400">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="py-3 text-right text-gray-700 dark:text-gray-400">@HackerToolbox.Services.BrasiliaTime.Format(item.CreatedAt)</td>
                             </tr>
                         }
                     }

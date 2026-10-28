@@ -1,60 +1,58 @@
-<!-- <Project Sdk="Microsoft.NET.Sdk.Web">
-
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>c1d9f4d2-6c0a-4c8b-9f2e-6a1e2b6e9a41</UserSecretsId>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-  </ItemGroup>
-
-</Project> -->
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <OutputType>WinExe</OutputType>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>c1d9f4d2-6c0a-4c8b-9f2e-6a1e2b6e9a41</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="TuneladorConfig\**" />
-    <Content Remove="TuneladorConfig\**" />
-    <EmbeddedResource Remove="TuneladorConfig\**" />
-    <None Remove="TuneladorConfig\**" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.14">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
-  </ItemGroup>
+  <!--
+    O projeto de migrations PostgreSQL referencia este projeto (não o contrário, para evitar ciclo).
+    Por isso o DLL é compilado (sem reconstruir referências) e copiado por alvos aqui:
+    após o Build (dotnet build/run, saída de desenvolvimento) e após o Publish.
+    Requer 'dotnet restore Site/HackerToolbox.slnx' (restaura também Migrations.Postgres).
+    Desative com -p:BuildPostgresMigrations=false.
+  -->
+  <PropertyGroup>
+    <PostgresMigrationsProject>$(MSBuildThisFileDirectory)..\Migrations.Postgres\HackerToolbox.Migrations.Postgres.csproj</PostgresMigrationsProject>
+  </PropertyGroup>
+
+  <Target Name="CopyPostgresMigrationsToOutput" AfterTargets="Build"
+          Condition="'$(BuildPostgresMigrations)' != 'false' and '$(DesignTimeBuild)' != 'true' and Exists('$(PostgresMigrationsProject)')">
+    <Warning Condition="!Exists('$(MSBuildThisFileDirectory)..\Migrations.Postgres\obj\project.assets.json')"
+             Text="Migrations.Postgres não restaurado: o provider Postgres não funcionará. Execute 'dotnet restore Site/HackerToolbox.slnx'." />
+    <MSBuild Condition="Exists('$(MSBuildThisFileDirectory)..\Migrations.Postgres\obj\project.assets.json')"
+             Projects="$(PostgresMigrationsProject)" Targets="Build"
+             Properties="Configuration=$(Configuration);BuildProjectReferences=false">
+      <Output TaskParameter="TargetOutputs" ItemName="PostgresMigrationsOutput" />
+    </MSBuild>
+    <Copy SourceFiles="@(PostgresMigrationsOutput)" DestinationFolder="$(OutDir)" Condition="'@(PostgresMigrationsOutput)' != ''" />
+  </Target>
+
+  <Target Name="IncludePostgresMigrationsInPublish" AfterTargets="Publish"
+          Condition="'$(BuildPostgresMigrations)' != 'false' and Exists('$(PostgresMigrationsProject)')">
+    <MSBuild Projects="$(PostgresMigrationsProject)" Targets="Build"
+             Properties="Configuration=$(Configuration);BuildProjectReferences=false">
+      <Output TaskParameter="TargetOutputs" ItemName="PostgresMigrationsPublishOutput" />
+    </MSBuild>
+    <Copy SourceFiles="@(PostgresMigrationsPublishOutput)" DestinationFolder="$(PublishDir)" />
+  </Target>
 
 </Project>
 

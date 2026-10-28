@@ -16,6 +16,6 @@ namespace HackerToolbox.Models
 
         public int ClickCount { get; set; } = 0; // Contador de cliques
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

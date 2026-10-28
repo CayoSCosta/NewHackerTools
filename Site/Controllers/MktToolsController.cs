@@ -1,13 +1,25 @@
+using HackerToolbox.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
 using System.IO;
+using System.Security.Claims;
 
 namespace HackerToolbox.Controllers
 {
     [Authorize]
     public class MktToolsController : Controller
     {
+        private readonly ILogger<MktToolsController> _logger;
+
+        public MktToolsController(ILogger<MktToolsController> logger)
+        {
+            _logger = logger;
+        }
+        private const long ScrubMaxFileBytes = 524_288_000; // 500 MB por arquivo
+        private const long ScrubRequestBytes = ScrubMaxFileBytes + 1_048_576;
+        private static readonly TimeSpan ScrubRetention = TimeSpan.FromHours(2);
+
         [HttpGet]
         public IActionResult ImageConverter()
         {
@@ -92,75 +104,156 @@ namespace HackerToolbox.Controllers
             return View();
         }
 
-        // Endpoint POST para Limpeza de Metadados em Massa (Imagens, PDFs, Docs)
+        // Processa um arquivo do lote: lê metadados (antes), limpa, lê metadados (depois) e guarda o resultado temporariamente
         [HttpPost]
-        public async Task<IActionResult> ScrubMetadata(IFormFile scrubFile)
+        [RequestSizeLimit(ScrubRequestBytes)]
+        [RequestFormLimits(MultipartBodyLengthLimit = ScrubRequestBytes)]
+        public async Task<IActionResult> ScrubFile(IFormFile file, string batchId, CancellationToken ct)
         {
-            if (scrubFile == null || scrubFile.Length == 0)
-            {
-                TempData["Error"] = "Nenhum arquivo enviado para limpeza de metadados.";
-                return RedirectToAction(nameof(ExifCleaner));
-            }
+            if (!TryGetBatchDir(batchId, out string batchDir))
+                return BadRequest(new { error = "Lote inválido." });
+            if (file == null || file.Length == 0)
+                return BadRequest(new { error = "Arquivo vazio." });
+            if (file.Length > ScrubMaxFileBytes)
+                return BadRequest(new { error = "Arquivo excede 500 MB." });
+
+            CleanupOldBatches();
+            Directory.CreateDirectory(batchDir);
+
+            string fileId = Guid.NewGuid().ToString("N");
+            string safeName = Path.GetInvalidFileNameChars().Aggregate(Path.GetFileName(file.FileName), (c, ch) => c.Replace(ch, '_'));
+            string extension = Path.GetExtension(safeName).ToLowerInvariant();
+            string outName = $"{Path.GetFileNameWithoutExtension(safeName)}_clean{extension}";
+            string inputPath = Path.Combine(batchDir, fileId + ".in");
+            string outputPath = Path.Combine(batchDir, fileId + ".out");
 
             try
             {
-                using var memoryStream = new MemoryStream();
-                await scrubFile.CopyToAsync(memoryStream);
-                byte[] originalBytes = memoryStream.ToArray();
-
-                string originalName = Path.GetFileNameWithoutExtension(scrubFile.FileName);
-                string extension = Path.GetExtension(scrubFile.FileName).ToLowerInvariant();
-
-                byte[] sanitizedBytes;
-
-                // Processamento específico baseado na extensão do arquivo
-                if (extension == ".jpg" || extension == ".jpeg" || extension == ".png")
+                await using (var fs = new FileStream(inputPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
                 {
-                    // Para imagens: recriamos o stream gráfico puro (reabrindo e salvando sem blocos EXIF adicionais)
-                    sanitizedBytes = ScrubImageMetadata(originalBytes);
-                }
-                else
-                {
-                    // Para PDFs, DOCX e outros arquivos: realizamos o expurgo estrutural básico de blocos de comentários/propriedades
-                    sanitizedBytes = originalBytes; // Em cenários avançados, limpamos headers proprietários de metadados
+                    await file.CopyToAsync(fs, ct);
                 }
 
-                string outputFileName = $"{originalName}_clean{extension}";
-                string mimeType = GetMimeType(extension.TrimStart('.'));
+                var before = await MetadataScrubber.ReadAsync(inputPath, extension, ct);
+                bool supported = await MetadataScrubber.CleanAsync(inputPath, outputPath, extension, ct);
+                var after = await MetadataScrubber.ReadAsync(outputPath, extension, ct);
 
-                return File(sanitizedBytes, mimeType, outputFileName);
+                await System.IO.File.WriteAllTextAsync(Path.Combine(batchDir, fileId + ".name"), outName, ct);
+
+                return Json(new
+                {
+                    fileId,
+                    name = file.FileName,
+                    outName,
+                    supported,
+                    sizeBefore = file.Length,
+                    sizeAfter = new FileInfo(outputPath).Length,
+                    before,
+                    after
+                });
             }
-            catch (Exception ex)
+            catch (System.ComponentModel.Win32Exception ex)
             {
-                TempData["Error"] = $"Erro ao expurgar metadados: {ex.Message}";
-                return RedirectToAction(nameof(ExifCleaner));
+                _logger.LogError(ex, "ScrubFile: ffmpeg/ffprobe não encontrado. Arquivo={FileName}", file.FileName);
+                return StatusCode(500, new { error = "ffmpeg não encontrado no servidor." });
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "ScrubFile falhou. Arquivo={FileName} Tamanho={Size} Extensao={Ext} Lote={BatchId}",
+                    file.FileName, file.Length, extension, batchId);
+                foreach (var p in new[] { outputPath, Path.Combine(batchDir, fileId + ".name") })
+                {
+                    try { System.IO.File.Delete(p); } catch { }
+                }
+                return StatusCode(500, new { error = ex.Message });
+            }
+            finally
+            {
+                try { System.IO.File.Delete(inputPath); } catch { }
             }
         }
 
-        private byte[] ScrubImageMetadata(byte[] imageBytes)
+        [HttpGet]
+        public IActionResult DownloadScrubbed(string batchId, string fileId)
         {
-            // Em .NET, uma forma robusta e limpa de eliminar metadados de imagens 
-            // é ler os pixels brutos e reescrevê-los em um novo fluxo de memória limpo.
-            using var inputStream = new MemoryStream(imageBytes);
-            using var outputStream = new MemoryStream();
+            if (!TryGetBatchDir(batchId, out string batchDir) || !Guid.TryParseExact(fileId, "N", out _))
+                return NotFound();
 
-            // Usamos a cópia direta do stream para isolar o payload visual básico
-            inputStream.CopyTo(outputStream);
-            return outputStream.ToArray();
+            string outputPath = Path.Combine(batchDir, fileId + ".out");
+            string namePath = Path.Combine(batchDir, fileId + ".name");
+            if (!System.IO.File.Exists(outputPath) || !System.IO.File.Exists(namePath))
+                return NotFound();
+
+            string outName = System.IO.File.ReadAllText(namePath);
+            return PhysicalFile(outputPath, MetadataScrubber.GetMimeType(Path.GetExtension(outName)), outName);
         }
 
-        private string GetMimeType(string extension)
+        [HttpGet]
+        public async Task<IActionResult> DownloadBatchZip(string batchId)
         {
-            return extension switch
+            if (!TryGetBatchDir(batchId, out string batchDir) || !Directory.Exists(batchDir))
+                return NotFound();
+
+            var entries = Directory.GetFiles(batchDir, "*.name").OrderBy(f => System.IO.File.GetCreationTimeUtc(f)).ToList();
+            if (entries.Count == 0) return NotFound();
+
+            var zipPath = Path.Combine(Path.GetTempPath(), "hbx_zip_" + Guid.NewGuid().ToString("N"));
+            var zipStream = new FileStream(zipPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920,
+                FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+
+            var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
             {
-                "jpg" or "jpeg" => "image/jpeg",
-                "png" => "image/png",
-                "pdf" => "application/pdf",
-                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                _ => "application/octet-stream"
-            };
+                foreach (var namePath in entries)
+                {
+                    string outputPath = Path.ChangeExtension(namePath, ".out");
+                    if (!System.IO.File.Exists(outputPath)) continue;
+
+                    string name = await System.IO.File.ReadAllTextAsync(namePath);
+                    string unique = name;
+                    int dup = 2;
+                    while (!used.Add(unique))
+                        unique = $"{Path.GetFileNameWithoutExtension(name)}_{dup++}{Path.GetExtension(name)}";
+
+                    var entry = archive.CreateEntry(unique, CompressionLevel.NoCompression);
+                    await using var es = entry.Open();
+                    await using var src = new FileStream(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
+                    await src.CopyToAsync(es);
+                }
+            }
+            zipStream.Position = 0;
+            return File(zipStream, "application/zip", $"HackerToolbox_CleanFiles_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
         }
 
+        private string ScrubRoot()
+        {
+            string user = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anon";
+            user = Path.GetInvalidFileNameChars().Aggregate(user, (c, ch) => c.Replace(ch, '_'));
+            return Path.Combine(Path.GetTempPath(), "hbx_scrub", user);
+        }
+
+        private bool TryGetBatchDir(string batchId, out string batchDir)
+        {
+            batchDir = string.Empty;
+            if (!Guid.TryParseExact(batchId, "N", out _)) return false;
+            batchDir = Path.Combine(ScrubRoot(), batchId);
+            return true;
+        }
+
+        private void CleanupOldBatches()
+        {
+            try
+            {
+                string parent = Path.Combine(Path.GetTempPath(), "hbx_scrub");
+                if (!Directory.Exists(parent)) return;
+                foreach (var dir in Directory.EnumerateDirectories(parent, "*", SearchOption.AllDirectories))
+                {
+                    if (!Guid.TryParseExact(Path.GetFileName(dir), "N", out _)) continue;
+                    if (DateTime.UtcNow - Directory.GetLastWriteTimeUtc(dir) > ScrubRetention)
+                        Directory.Delete(dir, true);
+                }
+            }
+            catch { }
+        }
     }
 }
