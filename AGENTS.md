@@ -39,6 +39,7 @@ A aplicação utiliza ASP.NET Core Identity para autenticação e autorização 
 
 A aplicação principal está em `Site/`.
 
+- `Agent/RubinotTunnelAgent/`: agente desktop WinForms em .NET 8 para encaminhamento TCP; projeto separado da aplicação web.
 - `Site/Controllers/`: controllers MVC, um por área funcional.
 - `Site/Views/`: views organizadas por controller.
 - `Site/Models/`: modelos de domínio.
@@ -50,6 +51,7 @@ A aplicação principal está em `Site/`.
 - `docs/`: documentação de banco de dados, Docker e operações.
 - `compose.yaml`: configuração Docker padrão.
 - `compose.postgres.yaml`: configuração adicional para PostgreSQL.
+- `HackerToolbox.slnx`: solução na raiz que agrupa o agente, o site, as migrations PostgreSQL e os testes. `Site/HackerToolbox.slnx` permanece disponível para build focado no site e seus projetos associados.
 
 Antes de criar arquivos, verifique a estrutura e os padrões existentes. Não presuma que controllers, serviços ou views da Shopee já existem.
 
@@ -70,7 +72,12 @@ A documentação oficial é a referência para autenticação, assinatura, endpo
 1. Manter um cliente HTTP tipado e testável em `Site/Services/ShopeeApiClient.cs`.
 2. Disponibilizar o painel `/Shopee` integrado ao layout e protegido pela role `Admin`.
 3. Implementar primeiro consultas reais de produtos em modo somente leitura.
-4. Evoluir pedidos, estoque, preços e indicadores somente com endpoints oficialmente confirmados e requisito concreto.
+4. Evoluir o painel para dashboards de vendas, comissões, links de afiliado e indicadores, escolhendo a API correta (Seller ou Affiliate) de acordo com os dados e a documentação oficial.
+5. Avaliar pedidos, estoque e preços somente com endpoints oficialmente confirmados e requisito concreto.
+
+**Estado atual:** consultas somente leitura a produtos ativos da loja vendedora pela Shopee Open Platform v2 estão implementadas em `/Shopee`. Os detalhes estão em [docs/SHOPEE.md](docs/SHOPEE.md). Para uso real ainda é necessário configurar Partner ID/Key, Shop ID e Access Token. O fluxo OAuth, armazenamento e renovação automática de tokens não foram implementados.
+
+**Roadmap, ainda não implementado:** dashboards de vendas e comissões, links de afiliado e indicadores. Não presuma que esses dados venham da API de loja já integrada: avalie a Shopee Affiliate Open API para dados/links de afiliados e a Seller Open Platform para dados da loja, pedidos e catálogo. São APIs distintas, com contratos, autenticação e permissões próprios. Confirme documentação e acesso da conta antes de implementar cada recurso.
 
 ### 4.2. Autenticação e assinatura
 
@@ -87,6 +94,16 @@ A documentação oficial é a referência para autenticação, assinatura, endpo
 - Configure timeout, leitura limitada de resposta, tratamento de erro e proteção contra excesso de chamadas.
 - Comece com operações de leitura. Não altere produtos, preços, estoque, pedidos ou configurações da loja sem autorização explícita.
 - Não implemente endpoints, parâmetros ou formatos sem confirmação na documentação oficial.
+
+### 4.5. Roadmap: links e redes sociais
+
+A aplicação poderá futuramente centralizar links, métricas e automações de redes sociais, incluindo Instagram, Pinterest, WhatsApp e TikTok, além de outras plataformas definidas pelo usuário. Isto é planejamento, não funcionalidade já implementada.
+
+- Priorize APIs oficiais. Pesquise cada plataforma separadamente: recursos disponíveis, endpoints, autenticação, escopos, aprovações do app, limites e requisitos da conta podem diferir.
+- Para métricas de vendas/comissões e links Shopee, confirme se a origem correta é a Shopee Affiliate Open API ou a Seller Open Platform; não misture dados nem autenticações dessas APIs.
+- Planeje automações de publicação, agendamento e comunicação somente depois de confirmar capacidade oficial, consentimento e limites. WhatsApp deve usar a WhatsApp Business Platform/Cloud API quando aplicável; não presuma automação do aplicativo pessoal.
+- Não implemente scraping, evasão de limites, publicação ou mensagens em massa não autorizadas. Não publique conteúdo, envie mensagens ou execute ações externas reais sem autorização explícita do usuário.
+- Mantenha tokens fora do repositório e logs, associe as permissões à conta apropriada e valide respostas/erros sem expor dados sensíveis.
 
 ## 5. Convenções de Desenvolvimento
 
@@ -130,7 +147,7 @@ Consulte `docs/DOCKER.md` e `docs/DATABASE.md` para os procedimentos já definid
 Build e execução local:
 
 ```powershell
-dotnet build Site/HackerToolbox.slnx
+dotnet build HackerToolbox.slnx
 dotnet run --project Site/HackerToolbox.csproj
 ```
 

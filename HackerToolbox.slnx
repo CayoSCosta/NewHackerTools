@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Agent/RubinotTunnelAgent/RubinotTunnelAgent.csproj" />
+  <Project Path="Migrations.Postgres/HackerToolbox.Migrations.Postgres.csproj" />
+  <Project Path="Site/HackerToolbox.csproj" />
+  <Project Path="Tests/HackerToolbox.Tests/HackerToolbox.Tests.csproj" />
+</Solution>

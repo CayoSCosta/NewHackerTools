@@ -35,3 +35,11 @@ Referências oficiais consultadas:
 - [OpenAPI 2.0 Overview — signing](https://open.shopee.com/documents?module=87&type=2&id=58&version=2)
 
 O catálogo e a autorização disponíveis para a aplicação dependem das permissões e da loja configuradas no console Shopee Open Platform. A API pode aplicar limites adicionais por app/loja; em caso de limitação, a tela orienta tentar novamente mais tarde.
+
+## Próximos passos planejados (não implementados)
+
+O painel poderá evoluir para dashboards de vendas e comissões, consulta/geração de links de afiliado e indicadores. Esses dados podem pertencer à **Shopee Affiliate Open API**, distinta da API de gestão da loja usada pela consulta de produtos atual. Antes de desenvolver cada recurso, confirmar na documentação oficial vigente os endpoints, autenticação, campos, limites e permissões concedidas à conta.
+
+Pedidos, estoque e preços da loja também são ideias futuras; qualquer implementação deve começar em modo de leitura e permanecer restrita a operações oficiais confirmadas. A presença de uma área planejada no dashboard não significa que a operação já esteja integrada.
+
+Integrações futuras com Instagram, Pinterest, WhatsApp, TikTok ou outras redes devem ser avaliadas individualmente com as APIs oficiais, escopos e aprovações necessários. Automação de publicação ou comunicação só deve ser implementada quando permitida pela plataforma, respeitando consentimento e limites; não automatizar o WhatsApp pessoal nem contornar mecanismos das plataformas.
