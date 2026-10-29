@@ -1,0 +1,242 @@
+@model HackerToolbox.Controllers.ShopeeAffiliateViewModel
+@inject HackerToolbox.Services.ShopeeAffiliateActivityLog ActivityLog
+@{
+    ViewData["Title"] = "Shopee Afiliados";
+}
+
+<div class="space-y-6 font-mono">
+    <section class="bg-terminal-panel border border-terminal-border rounded-lg p-6 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center space-x-2 text-xs text-terminal-green mb-1">
+                <i class="fa-solid fa-link"></i>
+                <span>AFFILIATE // SHOPEE</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-wider">AFILIADOS SHOPEE</h1>
+            <p class="text-xs text-gray-500 mt-2">Shopee Affiliate Open API (GraphQL).</p>
+        </div>
+        <div class="text-xs px-3 py-1.5 rounded border @(Model.IsConfigured ? "text-terminal-green border-terminal-green/40 bg-black" : "text-yellow-500 border-yellow-500/40 bg-black")">
+            @(Model.IsConfigured ? "CONFIGURADO" : "AGUARDANDO CONFIGURAÇÃO")
+        </div>
+    </section>
+
+    @if (!Model.IsConfigured)
+    {
+        <section class="bg-terminal-panel border border-yellow-500/30 rounded-lg p-6 text-xs text-gray-400">
+            Configure <code>ShopeeAffiliate:AppId</code> e <code>ShopeeAffiliate:AppSecret</code> por User Secrets ou variáveis de ambiente. Veja docs/SHOPEE.md.
+        </section>
+    }
+    else
+    {
+        <section class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+            <form method="post" asp-action="TestConnection">
+                <button type="submit" class="px-4 py-2 text-xs border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">
+                    <i class="fa-solid fa-plug mr-2"></i>Testar autenticação
+                </button>
+            </form>
+            @if (Model.ConnectionOk is not null)
+            {
+                <div class="text-xs @(Model.ConnectionOk == true ? "text-terminal-green" : "text-red-400")">@Model.Message</div>
+            }
+        </section>
+    }
+
+    @if (Model.IsConfigured)
+    {
+        <section class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+            <h2 class="text-sm text-terminal-green font-bold"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>GERAR LINK DE AFILIADO</h2>
+            <form method="post" asp-action="Generate" class="space-y-3">
+                <div>
+                    <label for="originUrl" class="text-xs text-gray-400">Link do produto (https://shopee.com.br/...)</label>
+                    <input id="originUrl" name="originUrl" value="@Model.OriginUrl" maxlength="2048" required
+                           class="w-full mt-1 bg-black border border-terminal-border rounded px-3 py-2 text-xs text-white" />
+                </div>
+                <div>
+                    <label for="subIds" class="text-xs text-gray-400">SubIds (opcional, até 5, separados por vírgula)</label>
+                    <input id="subIds" name="subIds" value="@Model.SubIds" maxlength="300"
+                           class="w-full mt-1 bg-black border border-terminal-border rounded px-3 py-2 text-xs text-white" />
+                </div>
+                <button type="submit" class="px-4 py-2 text-xs border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">
+                    Gerar link de afiliado
+                </button>
+            </form>
+            @if (Model.GenerateOk is not null)
+            {
+                <div class="text-xs @(Model.GenerateOk == true ? "text-terminal-green" : "text-red-400")">@Model.GenerateMessage</div>
+            }
+            @if (Model.GenerateOk == true && Model.ShortLink is not null)
+            {
+                <div class="text-xs space-y-2">
+                    <div class="text-gray-500">Original: <span class="text-gray-300 break-all">@Model.OriginUrl</span></div>
+                    <div class="flex items-center gap-2">
+                        <input id="shortLink" readonly value="@Model.ShortLink" class="flex-1 bg-black border border-terminal-green/40 rounded px-3 py-2 text-terminal-green" />
+                        <button type="button" id="copyBtn" class="px-3 py-2 border border-terminal-border rounded text-gray-300 hover:text-terminal-green">
+                            <i class="fa-solid fa-copy mr-1"></i>Copiar
+                        </button>
+                    </div>
+                </div>
+                <script>
+                    document.getElementById('copyBtn').addEventListener('click', async function () {
+                        const input = document.getElementById('shortLink');
+                        try { await navigator.clipboard.writeText(input.value); this.textContent = 'Copiado!'; }
+                        catch { input.select(); document.execCommand('copy'); this.textContent = 'Copiado!'; }
+                    });
+                </script>
+            }
+        </section>
+
+        <section class="bg-terminal-panel border border-terminal-border rounded-lg p-6 space-y-4">
+            <h2 class="text-sm text-terminal-green font-bold"><i class="fa-solid fa-magnifying-glass mr-2"></i>BUSCAR OFERTAS EM MASSA (productOfferV2)</h2>
+            <form method="post" asp-action="Search" class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[200px]">
+                    <label for="keyword" class="text-xs text-gray-400">Palavra-chave (opcional)</label>
+                    <input id="keyword" name="keyword" value="@Model.Keyword" maxlength="100"
+                           class="w-full mt-1 bg-black border border-terminal-border rounded px-3 py-2 text-xs text-white" />
+                </div>
+                <div>
+                    <label for="sortType" class="text-xs text-gray-400">Ordenar por</label>
+                    <select id="sortType" name="sortType" class="block mt-1 bg-black border border-terminal-border rounded px-3 py-2 text-xs text-white">
+                        <option value="2" selected="@(Model.SortType == 2)">Mais vendidos</option>
+                        <option value="5" selected="@(Model.SortType == 5)">Maior comissão</option>
+                        <option value="4" selected="@(Model.SortType == 4)">Menor preço</option>
+                        <option value="3" selected="@(Model.SortType == 3)">Maior preço</option>
+                        <option value="1" disabled>Relevância (só com palavra-chave)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="page" class="text-xs text-gray-400">Página</label>
+                    <input id="page" name="page" type="number" min="1" value="@Model.Page"
+                           class="block mt-1 w-20 bg-black border border-terminal-border rounded px-3 py-2 text-xs text-white" />
+                </div>
+                <button type="submit" class="px-4 py-2 text-xs border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">Buscar</button>
+            </form>
+            @if (Model.SearchOk is not null)
+            {
+                <div class="text-xs @(Model.SearchOk == true ? "text-terminal-green" : "text-red-400")">@Model.SearchMessage</div>
+            }
+            @if (Model.Offers is { Offers.Count: > 0 })
+            {
+                @Html.AntiForgeryToken()
+                <div class="flex flex-wrap items-center gap-3 text-xs border border-terminal-border rounded p-3">
+                    <label class="flex items-center gap-2 text-gray-300"><input type="checkbox" id="selectAll" /> Selecionar todos</label>
+                    <label class="flex items-center gap-2 text-gray-400">SubIds <input id="bulkSubIds" value="whatsapp_grupo" maxlength="300" class="bg-black border border-terminal-border rounded px-2 py-1 text-white" /></label>
+                    <button type="button" id="convertSelected" class="px-3 py-1.5 border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">Converter selecionados</button>
+                    <button type="button" id="convertAll" class="px-3 py-1.5 border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">Converter todos</button>
+                    <button type="button" id="copyConverted" class="px-3 py-1.5 border border-terminal-border text-gray-300 rounded hover:text-terminal-green">Copiar convertidos</button>
+                    <span id="bulkStatus" class="text-gray-400"></span>
+                </div>
+                <div class="space-y-3">
+                    @foreach (var o in Model.Offers.Offers)
+                    {
+                        <div class="offer-card flex gap-3 border border-terminal-border rounded p-3 text-xs" data-origin="@(o.ProductLink ?? "")">
+                            <input type="checkbox" class="offer-check mt-1" aria-label="Selecionar oferta" />
+                            @if (o.ImageUrl is not null)
+                            {
+                                <img src="@o.ImageUrl" alt="" class="w-16 h-16 object-cover rounded" referrerpolicy="no-referrer" loading="lazy" />
+                            }
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <div class="text-white font-bold break-words">@o.Name</div>
+                                <div class="text-gray-400">
+                                    @o.ShopName · R$ @o.PriceMin@(o.PriceMax is not null && o.PriceMax != o.PriceMin ? " – R$ " + o.PriceMax : "")
+                                    @if (o.DiscountRate is > 0) { <span> · -@o.DiscountRate%</span> }
+                                    · comissão @o.CommissionRate · ★ @o.Rating · vendas @o.Sales
+                                </div>
+                                <div class="text-gray-500 break-all">Produto: @o.ProductLink</div>
+                                <div class="text-gray-600 break-all">Link da oferta (não confirmado como afiliado): @o.OfferLink</div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" class="convert-one px-2 py-1 border border-terminal-green text-terminal-green rounded hover:bg-terminal-green hover:text-black">Converter para meu link</button>
+                                    <input readonly class="converted flex-1 bg-black border border-terminal-border rounded px-2 py-1 text-terminal-green" placeholder="link de afiliado aparecerá aqui" />
+                                    <button type="button" class="copy-offer px-2 py-1 border border-terminal-border rounded text-gray-300 hover:text-terminal-green"><i class="fa-solid fa-copy"></i></button>
+                                </div>
+                                <div class="convert-msg text-red-400"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <script>
+                    (function () {
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                        const cards = Array.from(document.querySelectorAll('.offer-card'));
+                        const status = document.getElementById('bulkStatus');
+                        const subIds = () => document.getElementById('bulkSubIds').value;
+
+                        async function convert(card) {
+                            const out = card.querySelector('.converted');
+                            const msg = card.querySelector('.convert-msg');
+                            const btn = card.querySelector('.convert-one');
+                            msg.textContent = '';
+                            btn.disabled = true;
+                            try {
+                                const body = new URLSearchParams({ originUrl: card.dataset.origin, subIds: subIds() });
+                                const res = await fetch('@Url.Action("ConvertLink")', {
+                                    method: 'POST',
+                                    headers: { 'RequestVerificationToken': token, 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body
+                                });
+                                const data = await res.json();
+                                if (data.ok) { out.value = data.link; out.classList.add('border-terminal-green/40'); }
+                                else { msg.textContent = data.message; }
+                                return data;
+                            } catch { msg.textContent = 'Falha ao contatar o servidor.'; return { ok: false }; }
+                            finally { btn.disabled = false; }
+                        }
+
+                        async function convertMany(list) {
+                            let ok = 0, fail = 0;
+                            for (let i = 0; i < list.length; i++) {
+                                status.textContent = 'Convertendo ' + (i + 1) + '/' + list.length + '...';
+                                const r = await convert(list[i]);
+                                if (r.ok) ok++; else fail++;
+                                if (r.rateLimited) { status.textContent = 'Limite de requisições atingido; interrompido.'; return; }
+                                await new Promise(function (s) { setTimeout(s, 400); });
+                            }
+                            status.textContent = 'Concluído: ' + ok + ' convertido(s), ' + fail + ' falha(s).';
+                        }
+
+                        cards.forEach(function (card) {
+                            card.querySelector('.convert-one').addEventListener('click', function () { convertMany([card]); });
+                            card.querySelector('.copy-offer').addEventListener('click', async function () {
+                                const input = card.querySelector('.converted');
+                                if (!input.value) return;
+                                try { await navigator.clipboard.writeText(input.value); }
+                                catch { input.select(); document.execCommand('copy'); }
+                            });
+                        });
+                        document.getElementById('selectAll').addEventListener('change', function (e) {
+                            cards.forEach(function (c) { c.querySelector('.offer-check').checked = e.target.checked; });
+                        });
+                        document.getElementById('convertSelected').addEventListener('click', function () {
+                            const list = cards.filter(function (c) { return c.querySelector('.offer-check').checked; });
+                            if (list.length === 0) { status.textContent = 'Nenhuma oferta selecionada.'; return; }
+                            convertMany(list);
+                        });
+                        document.getElementById('convertAll').addEventListener('click', function () { convertMany(cards); });
+                        document.getElementById('copyConverted').addEventListener('click', async function () {
+                            const links = cards.map(function (c) { return c.querySelector('.converted').value; }).filter(Boolean);
+                            if (links.length === 0) { status.textContent = 'Nada convertido ainda.'; return; }
+                            try { await navigator.clipboard.writeText(links.join('\n')); status.textContent = links.length + ' link(s) copiado(s).'; }
+                            catch { status.textContent = 'Não foi possível copiar automaticamente.'; }
+                        });
+                    })();
+                </script>
+            }
+        </section>
+    }
+
+    <section class="bg-black border-2 border-terminal-green/60 rounded-lg p-4 space-y-2" aria-label="Log da API">
+        <h2 class="text-sm text-terminal-green font-bold tracking-widest"><i class="fa-solid fa-satellite-dish mr-2"></i>LOG DA API SHOPEE AFILIADOS</h2>
+        @{ var entries = ActivityLog.Snapshot(); }
+        @if (entries.Count == 0)
+        {
+            <div class="text-xs text-gray-500">Nenhuma chamada registrada desde que o site iniciou.</div>
+        }
+        @foreach (var e in entries)
+        {
+            <div class="text-xs px-3 py-2 rounded border @(e.Success ? "border-green-500 bg-green-950/40 text-green-300" : "border-red-500 bg-red-950/40 text-red-300")">
+                <span class="font-bold">@(e.Success ? "✅ SUCESSO" : "❌ FALHA")</span>
+                <span class="text-white">[@e.Operation]</span>
+                <span class="text-gray-400">@e.Time.ToLocalTime().ToString("dd/MM HH:mm:ss") · @e.ElapsedMs ms</span>
+                <div class="break-all">@e.Message</div>
+            </div>
+        }
+    </section>
+</div>

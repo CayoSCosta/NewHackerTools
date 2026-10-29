@@ -52,6 +52,17 @@ builder.Services.AddSingleton(serviceProvider =>
         serviceProvider.GetRequiredService<IOptions<ShopeeApiOptions>>());
 });
 
+builder.Services.Configure<ShopeeAffiliateOptions>(builder.Configuration.GetSection("ShopeeAffiliate"));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ShopeeAffiliateActivityLog>();
+builder.Services.AddHttpClient<ShopeeAffiliateApiClient>(client => client.Timeout = TimeSpan.FromSeconds(20))
+    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        AutomaticDecompression = System.Net.DecompressionMethods.All,
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+    });
+
 // Chaves de Data Protection persistentes (cookies/antiforgery sobrevivem à recriação do container).
 // Sem a configuração, mantém o comportamento padrão do ASP.NET Core.
 var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];

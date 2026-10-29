@@ -6,11 +6,11 @@
 
 ## 1. Visão Geral
 
-**Hacker.Toolbox** é uma suite de utilitários web construída em ASP.NET Core MVC, com ferramentas para desenvolvimento, marketing, encurtamento de URLs e funcionalidades futuras para a loja Shopee.
+**Hacker.Toolbox** é uma suite de utilitários web construída em ASP.NET Core MVC, com ferramentas para desenvolvimento, marketing, encurtamento de URLs e divulgação de ofertas de afiliados.
 
 A aplicação utiliza ASP.NET Core Identity para autenticação e autorização baseada em funções (RBAC).
 
-**Prioridade atual:** implementar a Shopee Open Platform v2 para consulta da loja vendedora e desenvolver dashboards funcionais usando dados reais, preservando a infraestrutura já validada.
+**Prioridade atual:** implementar a integração com a Shopee Affiliate Open API para autenticar a conta e gerar links de afiliado a partir de links de produtos. Em seguida, preparar mensagens promocionais com dados validados e investigar uma forma oficial e tecnicamente viável de distribuição em grupos do WhatsApp. Preservar a integração existente com a Shopee Seller Open Platform v2, sem confundir as duas APIs.
 
 ## 2. Stack Tecnológica
 
@@ -22,7 +22,7 @@ A aplicação utiliza ASP.NET Core Identity para autenticação e autorização 
 - **Autenticação:** ASP.NET Core Identity, `IdentityUser` e `IdentityRole`.
 - **Front-end:** Tailwind CSS via CDN, paleta escura (`#050505`) e verde terminal (`#00ff66`), Font Awesome 6.4, jQuery e jQuery Validation.
 - **Processamento de mídia:** FFmpeg e FFprobe para as ferramentas que necessitam desses recursos.
-- **Integração externa prioritária:** Shopee Open Platform v2, por REST/HTTP com assinatura HMAC-SHA256.
+- **Integrações Shopee:** a prioridade atual é a Shopee Affiliate Open API; a Shopee Seller Open Platform v2 já está integrada para consultas somente de leitura da loja vendedora.
 
 ### 2.1. Banco de dados e migrations
 
@@ -55,9 +55,40 @@ A aplicação principal está em `Site/`.
 
 Antes de criar arquivos, verifique a estrutura e os padrões existentes. Não presuma que controllers, serviços ou views da Shopee já existem.
 
-## 4. Prioridade Atual: Shopee Open Platform v2
+## 4. Integrações Shopee
 
-A integração é com a **API de gestão da loja vendedora** da Shopee, não com a Affiliate Open API.
+Shopee Affiliate Open API e Shopee Seller Open Platform v2 são APIs distintas, com autenticação, permissões e contratos próprios. Não misture credenciais, endpoints ou dados entre elas.
+
+### 4.1. Prioridade atual: Shopee Affiliate Open API
+
+A prioridade é criar um fluxo de divulgação de ofertas de afiliados: autenticar, receber um link de produto Shopee, gerar o link rastreável correspondente, preparar uma mensagem promocional com dados válidos e, em uma etapa posterior, investigar distribuição autorizada em grupos do WhatsApp.
+
+Referências oficiais iniciais:
+
+- [Affiliate Open API — autenticação e documentação](https://affiliate.shopee.com.br/open_api/document?type=authentication)
+- Endpoint GraphQL informado: `https://open-api.affiliate.shopee.com.br/graphql`
+
+A documentação oficial da Affiliate Open API é a única referência para confirmar mecanismo de autenticação e assinatura, formato do cabeçalho, operações GraphQL disponíveis, campos de entrada/saída, respostas, erros, limites e permissões. Antes de implementar, confira esses detalhes na documentação vigente, inclusive os requisitos de acesso da conta. Se algum detalhe não puder ser confirmado, registre a pendência e não invente endpoint, campo, query, mutation, fórmula de assinatura ou permissão.
+
+**Pendência documental atual:** ainda não estão confirmados o contrato de autenticação/assinatura, a operação oficial para geração de links, seu schema GraphQL, o formato de resposta nem os requisitos de acesso da conta. Não implemente a chamada real até validar esses pontos na documentação oficial.
+
+Ordem funcional:
+
+1. Confirmar documentação oficial e requisitos da Affiliate Open API.
+2. Implementar configuração segura e teste de autenticação/conectividade.
+3. Implementar a geração de links de afiliado a partir de links de produtos, usando somente operações e campos oficialmente confirmados.
+4. Criar uma interface administrativa para colar o link original, gerar o link afiliado e copiá-lo.
+5. Preparar mensagens promocionais somente com dados retornados pela API ou fornecidos e validados de outra forma; não inventar preço, desconto, disponibilidade ou atributos.
+6. Investigar e, após confirmação técnica, implementar o encaminhamento de ofertas para grupo do WhatsApp por método oficial e autorizado.
+7. Considerar dashboards de vendedor, estoque e pedidos como escopo secundário, usando a Seller Open Platform quando apropriado.
+
+**Estado atual:** a integração Affiliate Open API, autenticação de afiliado e geração de links ainda não foram implementadas. A primeira entrega deverá incluir autenticação configurável, validação de conexão e geração de links, com testes automatizados usando credenciais fictícias e respostas simuladas. Uso real dependerá das credenciais, permissões e aprovação/acesso da conta de afiliado.
+
+As credenciais de afiliado devem usar uma configuração própria, separada de `Shopee:PartnerId`, `Shopee:PartnerKey`, `Shopee:ShopId` e `Shopee:AccessToken`, que pertencem à Seller Open Platform. Use User Secrets em desenvolvimento e variáveis de ambiente ou secret manager em produção. Não registre segredos, assinaturas, cabeçalhos de autorização, URLs sensíveis ou corpos que possam conter dados privados.
+
+### 4.2. Integração existente: Shopee Seller Open Platform v2
+
+A Seller Open Platform é a API de gestão da loja vendedora e permanece implementada em `/Shopee` para consultas somente de leitura de produtos ativos. Ela não é a API de afiliados e não deve ser substituída nem apresentada como fonte automática de links/comissões de afiliado.
 
 Documentação oficial consultada:
 
@@ -65,45 +96,19 @@ Documentação oficial consultada:
 - [Product API — get_item_base_info](https://open.shopee.com/documents/v2/v2.product.get_item_base_info?version=2)
 - [OpenAPI 2.0 Overview — signing](https://open.shopee.com/documents?module=87&type=2&id=58&version=2)
 
-A documentação oficial é a referência para autenticação, assinatura, endpoints, campos, paginação, limites e formatos de resposta. Se algum detalhe não puder ser confirmado, registre a pendência e não invente uma implementação.
+As chamadas v2 de loja usam `partner_id`, `timestamp`, `access_token`, `shop_id` e `sign`. A assinatura documentada é HMAC-SHA256 com `partner_key`; valide fórmula, ordem e codificação contra a documentação oficial e testes fictícios. Para uso real ainda é necessário configurar Partner ID/Key, Shop ID e Access Token. O fluxo OAuth, armazenamento e renovação automática desses tokens não foram implementados. Os detalhes da integração estão em [docs/SHOPEE.md](docs/SHOPEE.md).
 
-### 4.1. Objetivos funcionais
+Mantenha a Seller API em modo de leitura. Não altere produtos, preços, estoque, pedidos ou configurações da loja sem autorização explícita. Os recursos de catálogo, pedidos e gestão disponíveis devem ser confirmados na documentação oficial e tratados como escopo secundário.
 
-1. Manter um cliente HTTP tipado e testável em `Site/Services/ShopeeApiClient.cs`.
-2. Disponibilizar o painel `/Shopee` integrado ao layout e protegido pela role `Admin`.
-3. Implementar primeiro consultas reais de produtos em modo somente leitura.
-4. Evoluir o painel para dashboards de vendas, comissões, links de afiliado e indicadores, escolhendo a API correta (Seller ou Affiliate) de acordo com os dados e a documentação oficial.
-5. Avaliar pedidos, estoque e preços somente com endpoints oficialmente confirmados e requisito concreto.
+### 4.3. WhatsApp e outras redes sociais
 
-**Estado atual:** consultas somente leitura a produtos ativos da loja vendedora pela Shopee Open Platform v2 estão implementadas em `/Shopee`. Os detalhes estão em [docs/SHOPEE.md](docs/SHOPEE.md). Para uso real ainda é necessário configurar Partner ID/Key, Shop ID e Access Token. O fluxo OAuth, armazenamento e renovação automática de tokens não foram implementados.
+A integração com WhatsApp vem depois da autenticação e geração de links de afiliado. Investigue meios oficiais e tecnicamente viáveis para distribuir ofertas em grupos, confirmando documentação vigente, disponibilidade para o tipo de conta/app, requisitos, permissões e limitações.
 
-**Roadmap, ainda não implementado:** dashboards de vendas e comissões, links de afiliado e indicadores. Não presuma que esses dados venham da API de loja já integrada: avalie a Shopee Affiliate Open API para dados/links de afiliados e a Seller Open Platform para dados da loja, pedidos e catálogo. São APIs distintas, com contratos, autenticação e permissões próprios. Confirme documentação e acesso da conta antes de implementar cada recurso.
-
-### 4.2. Autenticação e assinatura
-
-- As chamadas v2 de loja usam `partner_id`, `timestamp`, `access_token`, `shop_id` e `sign`.
-- A assinatura documentada é HMAC-SHA256 com `partner_key`; valide fórmula, ordem e codificação contra a documentação oficial e testes fictícios.
-- Tokens reais devem ser emitidos/autorizados na Shopee e mantidos fora do repositório. Registre eventual ausência de automação de OAuth, armazenamento ou renovação de tokens como pendência.
-- Não registre tokens, chaves, URLs de requisição com query sensível ou assinaturas nos logs.
-
-### 4.3. Segurança e escopo
-
-- Configure `Shopee:PartnerId`, `Shopee:PartnerKey`, `Shopee:ShopId` e `Shopee:AccessToken` por User Secrets em desenvolvimento ou variáveis de ambiente/secret manager em produção.
-- Não grave credenciais em código, arquivos versionados ou `appsettings.json`.
-- Não exponha tokens, chaves, URLs sensíveis ou respostas remotas em logs, HTML, erros ou respostas da aplicação.
-- Configure timeout, leitura limitada de resposta, tratamento de erro e proteção contra excesso de chamadas.
-- Comece com operações de leitura. Não altere produtos, preços, estoque, pedidos ou configurações da loja sem autorização explícita.
-- Não implemente endpoints, parâmetros ou formatos sem confirmação na documentação oficial.
-
-### 4.5. Roadmap: links e redes sociais
-
-A aplicação poderá futuramente centralizar links, métricas e automações de redes sociais, incluindo Instagram, Pinterest, WhatsApp e TikTok, além de outras plataformas definidas pelo usuário. Isto é planejamento, não funcionalidade já implementada.
-
-- Priorize APIs oficiais. Pesquise cada plataforma separadamente: recursos disponíveis, endpoints, autenticação, escopos, aprovações do app, limites e requisitos da conta podem diferir.
-- Para métricas de vendas/comissões e links Shopee, confirme se a origem correta é a Shopee Affiliate Open API ou a Seller Open Platform; não misture dados nem autenticações dessas APIs.
-- Planeje automações de publicação, agendamento e comunicação somente depois de confirmar capacidade oficial, consentimento e limites. WhatsApp deve usar a WhatsApp Business Platform/Cloud API quando aplicável; não presuma automação do aplicativo pessoal.
-- Não implemente scraping, evasão de limites, publicação ou mensagens em massa não autorizadas. Não publique conteúdo, envie mensagens ou execute ações externas reais sem autorização explícita do usuário.
-- Mantenha tokens fora do repositório e logs, associe as permissões à conta apropriada e valide respostas/erros sem expor dados sensíveis.
+- Não presuma que a WhatsApp Business Platform/Cloud API permita enviar mensagens para qualquer grupo ou que a conta tenha acesso a esse recurso.
+- Não implemente automação não oficial do WhatsApp Web, scraping ou mecanismos para contornar restrições.
+- Não envie mensagens reais nem publique ofertas sem autorização explícita do usuário.
+- Instagram, Pinterest, TikTok e outras redes permanecem possibilidades futuras; avalie cada plataforma separadamente com base nas APIs oficiais, permissões, escopos, aprovações e limites.
+- Mantenha tokens fora do repositório e logs, associe permissões à conta apropriada e valide erros sem expor dados sensíveis.
 
 ## 5. Convenções de Desenvolvimento
 
@@ -111,9 +116,9 @@ A aplicação poderá futuramente centralizar links, métricas e automações de
 - Evite misturar MVC com Razor Pages fora de `Areas/Identity`.
 - Operações de I/O devem utilizar APIs assíncronas quando disponíveis.
 - Utilize injeção de dependências e mantenha os serviços testáveis.
-- Trate erros de entrada, falhas de rede, respostas HTTP inválidas e erros funcionais retornados pela API Shopee.
+- Trate erros de entrada, falhas de rede, respostas HTTP inválidas e erros funcionais retornados pelas APIs Shopee, incluindo erros GraphQL quando aplicável.
 - Não presuma que um HTTP 200 significa que a operação da API foi bem-sucedida.
-- Valide e trate paginação de acordo com o contrato oficial.
+- Valide paginação, respostas e erros de acordo com o contrato oficial da API usada; não aplique contratos da Seller API à Affiliate API nem vice-versa.
 - Preserve os padrões visuais e de autorização existentes.
 - Novos módulos devem integrar-se ao menu lateral em `_Layout.cshtml`, quando apropriado.
 - Não adicione dependências sem necessidade comprovada.
@@ -157,8 +162,8 @@ Ao concluir uma alteração:
 
 1. Execute o build relevante.
 2. Execute os testes relevantes.
-3. Para a integração Shopee, utilize testes com credenciais fictícias e respostas simuladas.
-4. Verifique o tratamento de falhas de autenticação, timeouts e erros da API Shopee.
+3. Para as integrações Shopee, utilize testes com credenciais fictícias e respostas simuladas.
+4. Verifique autenticação, assinatura, timeouts, erros HTTP e erros funcionais da API usada, sem expor credenciais.
 5. Informe claramente quais testes passaram, falharam ou foram ignorados.
 6. Não declare a integração funcional sem uma validação real ou evidência equivalente suficiente.
 
@@ -211,7 +216,7 @@ Priorize entregas funcionais e evite consumo desnecessário de solicitações:
 - Agrupe alterações relacionadas em etapas coesas.
 - Evite prompts separados para auditorias redundantes, documentação repetida ou pequenas mudanças que possam ser feitas na mesma tarefa.
 - Não refaça validações já concluídas sem uma mudança relevante.
-- Priorize a primeira integração real com a Shopee e, em seguida, expanda as funcionalidades com base nos resultados.
+- Priorize autenticação e geração de links de afiliado via Affiliate Open API; depois investigue a distribuição autorizada em grupos do WhatsApp. Preserve a integração Seller existente e mantenha dashboards de vendedor em escopo secundário.
 - Evite refatorações cosméticas e melhorias de infraestrutura que não desbloqueiem a funcionalidade atual.
 
 ## 10. Critério de Conclusão
@@ -226,4 +231,4 @@ Uma funcionalidade só deve ser considerada concluída quando:
 - Tem suas limitações e dependências externas documentadas.
 - Preserva os dados e as alterações preexistentes.
 
-**Diretriz principal:** preservar o que já funciona, implementar a Shopee Open Platform v2 com base na documentação oficial e priorizar resultados reais sem comprometer a segurança, os dados ou o orçamento de uso do Copilot.
+**Diretriz principal:** preservar o que já funciona, priorizar a Shopee Affiliate Open API para autenticação e geração de links com base na documentação oficial, e avançar para distribuição de ofertas no WhatsApp somente após confirmar um método oficial e autorizado, sem comprometer a segurança, os dados ou o orçamento de uso do Copilot.

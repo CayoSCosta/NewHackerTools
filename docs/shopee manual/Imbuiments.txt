@@ -1,0 +1,32 @@
+mana
+25 rope belt
+25 silencer claw
+05 grimelee chwings
+
+########################
+
+critico
+20 protective charm
+25 sabretooth
+05 vexclaw talon 
+
+########################
+
+healt
+25 vampire teeth
+15 bloody pincers
+05 dead brain
+
+########################
+
+distance
+20 elven hoof
+25 elven scouting glass
+10 metal spike
+
+########################
+
+remove paralysis
+20 wereboar hooves
+15 crystallized anger
+05 quill
